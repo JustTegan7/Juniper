@@ -1,0 +1,15 @@
+{
+  "name": "evergreen-app-template",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run dev -w @evergreen/web",
+    "build": "npm run build -w @evergreen/web",
+    "lint": "npm run lint -w @evergreen/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run generate -w @evergreen/db",
+    "db:migrate": "npm run migrate -w @evergreen/db"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+build
+coverage
+.env*
+!.env.example
+!.env.local.example
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+Claude outputs
+
+# Playwright
+/apps/web/test-results/
+/apps/web/playwright-report/
+
+push-to-github.bat

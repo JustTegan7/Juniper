@@ -1,0 +1,19 @@
+{
+  "name": "@evergreen/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "drizzle-orm": "^0.45.0",
+    "uuidv7": "^1.0.2"
+  },
+  "devDependencies": { "drizzle-kit": "^0.31.0", "tsx": "^4.20.0", "dotenv": "^17.0.0", "typescript": "^5" }
+}
