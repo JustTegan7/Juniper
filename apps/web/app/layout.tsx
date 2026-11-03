@@ -9,8 +9,8 @@ const body = Figtree({ variable: "--font-figtree", subsets: ["latin"], display: 
 export const metadata: Metadata = baseMetadata;
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F6F8F4" },
-    { media: "(prefers-color-scheme: dark)", color: "#0B1A18" },
+    { media: "(prefers-color-scheme: light)", color: "#F6F7FB" },
+    { media: "(prefers-color-scheme: dark)", color: "#10141F" },
   ],
 };
 

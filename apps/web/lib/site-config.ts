@@ -1,14 +1,14 @@
 // Single source of truth for the public site info (metadata, JSON-LD, footer, emails).
-// TEMPLATE: change every value here first when starting a new app.
 export const siteConfig = {
-  businessName: "Your App",
-  tagline: "One line about what this app does.",
-  url: "https://example.com",
+  businessName: "Juniper One",
+  tagline: "Online booking, team schedules and the time clock in one place. Built for salons, ready for any appointment business.",
+  // TEMPLATE: set NEXT_PUBLIC_SITE_URL in Vercel once the domain is chosen.
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://juniperone.com",
   parent: "Evergreen Digital Co.",
   parentUrl: "https://evergreendigitalco.com",
 
   phone: "",
-  email: "",
+  email: "tegan@evergreendigitalco.com",
   address: { street: "", city: "", state: "WA", postalCode: "" },
   serviceArea: [] as string[],
 
@@ -21,9 +21,9 @@ export const siteConfig = {
     googleBusinessProfile: "",
   },
 
-  defaultTitle: "Your App",
-  titleTemplate: "%s | Your App",
-  defaultDescription: "A web app from Evergreen Digital Co.",
+  defaultTitle: "Juniper One | Booking and staff app for salons",
+  titleTemplate: "%s | Juniper One",
+  defaultDescription: "Juniper One gives salons and appointment businesses online booking, staff schedules, a time clock and time off requests, from Evergreen Digital Co.",
   ogImage: "/og-image.png",
   locale: "en_US",
 

@@ -88,9 +88,13 @@ export function LoginForm({ next, startForgot = false, justReset = false }: { ne
           Forgot password?
         </button>
       )}
-      <button type="button" className="mt-2 w-full text-center text-sm text-muted underline" onClick={() => { setMode(mode === "in" ? "up" : "in"); setSent(false); setError(null); }}>
-        {mode === "in" ? "First time here? Create your login" : "Already have a login? Log in"}
-      </button>
+      {mode === "in" ? (
+        <p className="mt-2 text-center text-sm text-muted">New to the team? Open the invite link your manager sent you.</p>
+      ) : (
+        <button type="button" className="mt-2 w-full text-center text-sm text-muted underline" onClick={() => { setMode("in"); setSent(false); setError(null); }}>
+          Back to log in
+        </button>
+      )}
     </div>
   );
 }

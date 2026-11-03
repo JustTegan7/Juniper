@@ -8,3 +8,11 @@ export function db(): Db {
   if (!_db) _db = createDb();
   return _db;
 }
+
+type BatchItem = Parameters<Db["batch"]>[0][number];
+
+/** Runs queries in one transaction. Accepts a plain list, so optional steps can be spread in. */
+export async function batch(items: BatchItem[]) {
+  if (!items.length) return [];
+  return db().batch(items as [BatchItem, ...BatchItem[]]);
+}

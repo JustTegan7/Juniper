@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { setTemporaryPasswordAction } from "../../app/(app)/actions";
 import { useAct } from "./useAct";
+import { formObject } from "../../lib/form";
 
 export function TempPassword({ userId, name }: { userId: string; name: string }) {
   const { act, pending } = useAct();
@@ -11,7 +12,7 @@ export function TempPassword({ userId, name }: { userId: string; name: string })
     return <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen(true)}>Set temporary password</button>;
   }
   return (
-    <form className="flex w-full flex-wrap items-end gap-2 sm:w-auto" action={(f) => act(() => setTemporaryPasswordAction(f), () => setOpen(false))}>
+    <form className="flex w-full flex-wrap items-end gap-2 sm:w-auto" action={(f) => act(() => setTemporaryPasswordAction(formObject(f)), () => setOpen(false))}>
       <input type="hidden" name="userId" value={userId} />
       <div>
         <label className="label" htmlFor={`tp-${userId}`}>New password for {name}</label>

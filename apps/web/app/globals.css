@@ -2,17 +2,17 @@
 
 /* Brand tokens. Mirrors packages/brand (tokens.test.ts keeps them in sync). */
 :root {
-  --bg: #F6F8F4;
+  --bg: #F6F7FB;
   --surface: #FFFFFF;
-  --surface-2: #EEF2EC;
-  --border: #DCE3D8;
-  --fg: #0B1A18;
-  --muted: #55645F;
-  --primary: #0F3D3A;
+  --surface-2: #EEF0F6;
+  --border: #DCE0EC;
+  --fg: #141A2B;
+  --muted: #596079;
+  --primary: #3E4C78;
   --primary-fg: #FFFFFF;
-  --accent: #B8E066;
-  --accent-fg: #0F3D3A;
-  --mark: #B8E066;
+  --accent: #C9D3EA;
+  --accent-fg: #3E4C78;
+  --mark: #C9D3EA;
   --overdue: #C8643C;
   --today: #B9831A;
   --radius-sm: 8px;
@@ -23,30 +23,30 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0B1A18;
-    --surface: #12241F;
-    --surface-2: #18302A;
-    --border: #24403A;
-    --fg: #E8EFE6;
-    --muted: #9AB0A8;
-    --primary: #B8E066;
-    --primary-fg: #0F3D3A;
-    --mark: rgba(184, 224, 102, 0.35);
+    --bg: #10141F;
+    --surface: #171C2B;
+    --surface-2: #1F2638;
+    --border: #2C3550;
+    --fg: #E8EBF4;
+    --muted: #9AA3BE;
+    --primary: #A9B8EE;
+    --primary-fg: #141A2B;
+    --mark: rgba(169, 184, 238, 0.35);
     --overdue: #E58A63;
     --today: #E8B33A;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0B1A18;
-  --surface: #12241F;
-  --surface-2: #18302A;
-  --border: #24403A;
-  --fg: #E8EFE6;
-  --muted: #9AB0A8;
-  --primary: #B8E066;
-  --primary-fg: #0F3D3A;
-  --mark: rgba(184, 224, 102, 0.35);
+  --bg: #10141F;
+  --surface: #171C2B;
+  --surface-2: #1F2638;
+  --border: #2C3550;
+  --fg: #E8EBF4;
+  --muted: #9AA3BE;
+  --primary: #A9B8EE;
+  --primary-fg: #141A2B;
+  --mark: rgba(169, 184, 238, 0.35);
   --overdue: #E58A63;
   --today: #E8B33A;
   color-scheme: dark;
@@ -101,7 +101,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0
   .mark { background: linear-gradient(transparent 55%, var(--mark) 55%, var(--mark) 92%, transparent 92%); padding: 0 .1em; }
 }
 
-dialog::backdrop { background: rgb(11 26 24 / .45); }
+dialog::backdrop { background: rgb(20 26 43 / .45); }
 dialog { background: var(--surface); color: var(--fg); }
 
 @media (prefers-reduced-motion: reduce) {

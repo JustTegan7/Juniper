@@ -2,20 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconHome, IconTeam } from "./Icons";
+import { IconCalendar, IconClock, IconGear, IconHome, IconMore, IconScissors, IconSheet, IconSun2, IconTeam, IconUsers } from "./Icons";
 
-// App navigation. Each app replaces these items with its own screens.
-const ITEMS = [
-  { href: "/home", label: "Home", Icon: IconHome },
-  { href: "/team", label: "Team", Icon: IconTeam },
-];
+const ICONS = {
+  home: IconHome,
+  calendar: IconCalendar,
+  clients: IconUsers,
+  clock: IconClock,
+  timeoff: IconSun2,
+  timesheets: IconSheet,
+  services: IconScissors,
+  team: IconTeam,
+  settings: IconGear,
+  more: IconMore,
+} as const;
 
-export function SideNav() {
+export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; badge?: number };
+
+function isOn(path: string, href: string) {
+  return path === href || path.startsWith(href + "/");
+}
+
+export function SideNav({ items }: { items: NavItem[] }) {
   const path = usePathname();
   return (
     <nav aria-label="App" className="space-y-1">
-      {ITEMS.map(({ href, label, Icon }) => {
-        const on = path === href || path.startsWith(href + "/");
+      {items.map(({ href, label, icon, badge }) => {
+        const on = isOn(path, href);
+        const Icon = ICONS[icon];
         return (
           <Link
             key={href}
@@ -25,6 +39,7 @@ export function SideNav() {
           >
             <Icon />
             <span className="flex-1">{label}</span>
+            {badge ? <span className="pill bg-primary text-primary-fg">{badge}</span> : null}
           </Link>
         );
       })}
@@ -32,16 +47,20 @@ export function SideNav() {
   );
 }
 
-export function BottomTabs() {
+/** Phone tabs: the first four screens plus More for the rest. */
+export function BottomTabs({ items }: { items: NavItem[] }) {
   const path = usePathname();
+  const tabs: NavItem[] = items.length > 5 ? [...items.slice(0, 4), { href: "/more", label: "More", icon: "more", badge: items.slice(4).reduce((n, i) => n + (i.badge ?? 0), 0) || undefined }] : items;
   return (
     <nav aria-label="App" className="fixed inset-x-0 bottom-0 z-40 flex items-center border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
-      {ITEMS.map(({ href, label, Icon }) => {
-        const on = path === href || path.startsWith(href + "/");
+      {tabs.map(({ href, label, icon, badge }) => {
+        const on = isOn(path, href) || (href === "/more" && items.slice(4).some((i) => isOn(path, i.href)));
+        const Icon = ICONS[icon];
         return (
           <Link key={href} href={href} aria-current={on ? "page" : undefined} className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold ${on ? "text-fg" : "text-muted"}`}>
             <Icon />
             {label}
+            {badge ? <span className="absolute right-[calc(50%-18px)] top-1 h-2 w-2 rounded-full bg-overdue" aria-label={`${badge} waiting`} /> : null}
           </Link>
         );
       })}

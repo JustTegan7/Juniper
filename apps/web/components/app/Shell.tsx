@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "../../lib/auth-client";
 import { Logo, Mark } from "../Logo";
-import { BottomTabs, SideNav } from "./Nav";
+import { BottomTabs, SideNav, type NavItem } from "./Nav";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 import { IconSun } from "./Icons";
 
 const THEME_KEY = "app-theme";
@@ -26,11 +27,19 @@ export function Shell({
   me,
   color,
   workspaceName,
+  workspaceId,
+  workspaces,
+  nav,
+  isPlatformAdmin,
 }: {
   children: React.ReactNode;
   me: { id: string; name: string; role: string };
   color: string;
   workspaceName: string;
+  workspaceId: string;
+  workspaces: { id: string; name: string }[];
+  nav: NavItem[];
+  isPlatformAdmin: boolean;
 }) {
   const router = useRouter();
 
@@ -43,10 +52,11 @@ export function Shell({
   return (
     <div className="min-h-screen md:grid md:grid-cols-[232px_1fr]">
       <aside className="sticky top-0 hidden h-screen flex-col border-r border-line bg-surface p-4 md:flex">
-        <Link href="/home" className="mb-6 px-2" aria-label="Home"><Logo /></Link>
-        <SideNav />
+        <Link href="/today" className="mb-6 px-2" aria-label="Today"><Logo /></Link>
+        <SideNav items={nav} />
         <div className="mt-auto space-y-2 border-t border-line pt-4">
-          <p className="px-2 text-xs text-muted">{workspaceName}</p>
+          <WorkspaceSwitcher current={workspaceId} currentName={workspaceName} workspaces={workspaces} />
+          {isPlatformAdmin && <Link href="/admin" className="block px-2 text-xs font-semibold text-muted underline">Juniper admin</Link>}
           <div className="flex items-center gap-1">
             <ThemeToggle />
             <button type="button" className="btn btn-ghost btn-sm" onClick={signOut}>Sign out</button>
@@ -56,7 +66,7 @@ export function Shell({
 
       <div className="min-w-0 pb-24 md:pb-0">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-bg/90 px-4 backdrop-blur sm:px-6">
-          <Link href="/home" className="md:hidden" aria-label="Home"><Mark size={26} /></Link>
+          <Link href="/today" className="md:hidden" aria-label="Today"><Mark size={26} /></Link>
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-muted md:hidden">{workspaceName}</p>
           <div className="hidden flex-1 md:block" />
           <div className="md:hidden"><ThemeToggle /></div>
@@ -66,7 +76,9 @@ export function Shell({
             </summary>
             <div className="card absolute right-0 mt-2 w-48 p-2 shadow-lg">
               <p className="px-2 py-1 text-sm font-semibold">{me.name}</p>
-              <p className="px-2 pb-2 text-xs capitalize text-muted">{me.role}</p>
+              <p className="px-2 pb-2 text-xs capitalize text-muted">{me.role} at {workspaceName}</p>
+              {workspaces.length > 1 && <div className="px-2 pb-2 md:hidden"><WorkspaceSwitcher current={workspaceId} currentName={workspaceName} workspaces={workspaces} /></div>}
+              {isPlatformAdmin && <Link href="/admin" className="btn btn-ghost btn-sm w-full justify-start">Juniper admin</Link>}
               <button type="button" className="btn btn-ghost btn-sm w-full justify-start" onClick={signOut}>Sign out</button>
             </div>
           </details>
@@ -74,7 +86,7 @@ export function Shell({
         <main id="main-content" className="mx-auto max-w-6xl px-4 py-6 sm:px-6">{children}</main>
       </div>
 
-      <BottomTabs />
+      <BottomTabs items={nav} />
     </div>
   );
 }

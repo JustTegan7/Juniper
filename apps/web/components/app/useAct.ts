@@ -20,12 +20,12 @@ export function useResultToast() {
 export function useAct() {
   const show = useResultToast();
   const [pending, start] = useTransition();
-  function act(fn: () => Promise<ActionResult>, onOk?: (r: Extract<ActionResult, { ok: true }>) => void, onError?: () => void) {
+  function act(fn: () => Promise<ActionResult>, onOk?: (r: Extract<ActionResult, { ok: true }>) => void, onError?: (r: Extract<ActionResult, { ok: false }>) => void) {
     start(async () => {
       const r = await fn();
       show(r);
       if (r.ok) onOk?.(r);
-      else onError?.();
+      else onError?.(r);
     });
   }
   return { act, pending };

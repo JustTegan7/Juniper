@@ -8,6 +8,20 @@
       "when": 1793661577757,
       "tag": "0000_married_quentin_quire",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793664363579,
+      "tag": "0001_juniper_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793664364405,
+      "tag": "0002_overlap_guards",
+      "breakpoints": true
     }
   ]
 }

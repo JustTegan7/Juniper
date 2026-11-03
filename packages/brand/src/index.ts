@@ -1,14 +1,12 @@
-// Brand tokens. One source for the web app and the future phone app.
+// Juniper One brand tokens. One source for the web app and the future phone app.
 // apps/web/app/globals.css mirrors these; a test in apps/web checks they match.
-// These are the starting Evergreen greens. Each app overrides them with its own brand.
 
 export const palette = {
-  forest: "#0F3D3A",
-  lime: "#B8E066",
-  leaf: "#7FC28A",
-  sea: "#4FB39C",
-  sage: "#EEF2EC",
-  ink: "#0B1A18",
+  berry: "#3E4C78",
+  frost: "#C9D3EA",
+  needle: "#4F7A62",
+  mist: "#EEF0F6",
+  ink: "#141A2B",
   white: "#FFFFFF",
   clay: "#C8643C",
   sun: "#E8B33A",
@@ -16,32 +14,32 @@ export const palette = {
 
 export const tokens = {
   light: {
-    bg: "#F6F8F4",
+    bg: "#F6F7FB",
     surface: "#FFFFFF",
-    surface2: palette.sage,
-    border: "#DCE3D8",
+    surface2: palette.mist,
+    border: "#DCE0EC",
     fg: palette.ink,
-    muted: "#55645F",
-    primary: palette.forest,
+    muted: "#596079",
+    primary: palette.berry,
     primaryFg: "#FFFFFF",
-    accent: palette.lime,
-    accentFg: palette.forest,
-    mark: palette.lime,
+    accent: palette.frost,
+    accentFg: palette.berry,
+    mark: palette.frost,
     overdue: palette.clay,
     today: "#B9831A",
   },
   dark: {
-    bg: palette.ink,
-    surface: "#12241F",
-    surface2: "#18302A",
-    border: "#24403A",
-    fg: "#E8EFE6",
-    muted: "#9AB0A8",
-    primary: palette.lime,
-    primaryFg: palette.forest,
-    accent: palette.lime,
-    accentFg: palette.forest,
-    mark: "rgba(184, 224, 102, 0.35)",
+    bg: "#10141F",
+    surface: "#171C2B",
+    surface2: "#1F2638",
+    border: "#2C3550",
+    fg: "#E8EBF4",
+    muted: "#9AA3BE",
+    primary: "#A9B8EE",
+    primaryFg: palette.ink,
+    accent: palette.frost,
+    accentFg: palette.berry,
+    mark: "rgba(169, 184, 238, 0.35)",
     overdue: "#E58A63",
     today: palette.sun,
   },
@@ -49,5 +47,5 @@ export const tokens = {
   fonts: { display: "Bricolage Grotesque", body: "Figtree" },
 } as const;
 
-/** Placeholder mark, as SVG markup (viewBox 0 0 1024 1024). Swap for the real logo. */
-export const markSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" rx="228" fill="${palette.forest}"/><path d="M192 600a320 320 0 0 1 640 0z" fill="${palette.lime}"/><rect x="482" y="600" width="60" height="232" rx="30" fill="${palette.leaf}"/></svg>`;
+/** Juniper One mark: a sprig with three berries (viewBox 0 0 1024 1024). */
+export const markSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" rx="228" fill="${palette.berry}"/><path d="M512 860V420M512 560l-150-120M512 500l150-130" stroke="#8FBFA2" stroke-width="44" stroke-linecap="round" fill="none"/><circle cx="512" cy="300" r="110" fill="${palette.frost}"/><circle cx="340" cy="400" r="84" fill="${palette.frost}" opacity=".85"/><circle cx="690" cy="340" r="84" fill="${palette.frost}" opacity=".85"/></svg>`;
