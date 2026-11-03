@@ -37,7 +37,7 @@ export async function createBusinessAction(raw: unknown) {
     const v = createInput.parse(raw);
     const ws = await createBusiness({ name: v.name, slug: v.slug || undefined, industry: v.industry, timezone: v.timezone, starterServices: v.starterServices });
     let note = "";
-    if (v.addMe) await addMember(ws.id, session.user.id, "owner", "Evergreen support");
+    if (v.addMe) await addMember(ws.id, session.user.id, "owner", "Evergreen support", { bookable: false });
     if (v.ownerEmail) {
       const { link, sent } = await issueInvite(ws.id, { email: v.ownerEmail, role: "owner", title: v.ownerTitle || "Owner" }, session.user.id);
       note = sent ? ` Invite emailed to ${v.ownerEmail}.` : "";
@@ -66,7 +66,7 @@ export async function joinForSupportAction(workspaceId: string) {
     .where(and(eq(memberships.workspaceId, id), eq(memberships.userId, session.user.id), isNull(memberships.deletedAt)))
     .limit(1);
   // Keep any role they already have there.
-  if (!already) await addMember(id, session.user.id, "manager", "Evergreen support");
+  if (!already) await addMember(id, session.user.id, "manager", "Evergreen support", { bookable: false });
   (await cookies()).set(ACTIVE_WORKSPACE_COOKIE, id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 });
   redirect("/today");
 }

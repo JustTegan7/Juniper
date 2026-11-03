@@ -14,7 +14,6 @@ import * as clock from "../../lib/services/timeclock";
 import * as timeoff from "../../lib/services/timeoff";
 
 // Thin wrappers: build ctx, call a service, refresh the pages.
-export type { ActionResult };
 
 async function run(fn: (ctx: Ctx) => Promise<{ message: string; id?: string; data?: string }>): Promise<ActionResult> {
   const ctx = await getCtx();

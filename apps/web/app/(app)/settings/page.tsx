@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { getCtx, requireManager } from "../../../lib/services/ctx";
+import { redirect } from "next/navigation";
+import { isManager } from "@evergreen/core";
+import { getCtx } from "../../../lib/services/ctx";
 import { loadBusinessHours } from "../../../lib/services/hours";
 import { appUrl } from "../../../lib/platform";
 import { BookingRules, BusinessDetails, BusinessHoursForm, ContactForm, EmbedSnippet, TimeRulesForm, VocabularyForm } from "./SettingsForms";
@@ -18,7 +20,8 @@ function Section({ id, title, children, note }: { id: string; title: string; chi
 
 export default async function SettingsPage() {
   const ctx = await getCtx();
-  requireManager(ctx);
+  // Owners and managers only. Team members go back to their day.
+  if (!isManager(ctx.role)) redirect("/today");
   const ws = ctx.workspace;
   const hours = await loadBusinessHours(ws.id);
   const base = appUrl();

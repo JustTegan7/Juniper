@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useTransition } from "react";
-import type { ActionResult } from "../../app/(app)/actions";
+import type { ActionResult } from "../../lib/action-result";
 import { useToast } from "./Toast";
 
 /** Shows an action's result as a toast. The Toast supports an action button (for example Undo) when an app needs one. */

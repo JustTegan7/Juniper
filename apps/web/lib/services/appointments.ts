@@ -28,7 +28,7 @@ import { auditRow, type AuditActor } from "../audit";
 import { sendCancelled, sendConfirmation, sendRescheduled, type MailBusiness } from "../notify";
 import { hashToken, newToken } from "../tokens";
 import { loadCatalog, performers, timingFor, type Catalog, type Service } from "./catalog";
-import { clientName } from "./clients";
+import { clientName, formatPhone } from "./clients";
 import { actorOf, canManageStaff, ForbiddenError, type Ctx, type CtxWorkspace } from "./ctx";
 import { loadBusinessHours, loadOverrides, loadStaffHours } from "./hours";
 import { approvedTimeOff } from "./timeoff";
@@ -462,7 +462,7 @@ export async function loadCalendarDay(ctx: Ctx, day: string) {
     membershipId: a.membershipId,
     clientId: c.id,
     clientName: clientName(c),
-    clientPhone: c.phone,
+    clientPhone: c.phone ? formatPhone(c.phone) : null,
     clientEmail: c.email,
     serviceName: a.serviceName,
     startsAt: a.startsAt.toISOString(),

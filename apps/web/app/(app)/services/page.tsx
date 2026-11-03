@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { formatDuration, formatPrice } from "@evergreen/core";
-import { getCtx, requireManager } from "../../../lib/services/ctx";
+import { redirect } from "next/navigation";
+import { isManager } from "@evergreen/core";
+import { getCtx } from "../../../lib/services/ctx";
 import { loadCatalog } from "../../../lib/services/catalog";
 import { loadMembers } from "../../../lib/services/workspace";
 import { CategoryForm, ServiceForm } from "./ServiceForms";
@@ -9,7 +11,8 @@ export const metadata: Metadata = { title: "Services" };
 
 export default async function ServicesPage() {
   const ctx = await getCtx();
-  requireManager(ctx);
+  // Owners and managers only. Team members go back to their day.
+  if (!isManager(ctx.role)) redirect("/today");
   const [catalog, members] = await Promise.all([loadCatalog(ctx.workspace.id, { includeInactive: true }), loadMembers(ctx.workspace.id)]);
   const staff = members.filter((m) => m.bookable).map((m) => ({ id: m.membershipId, name: m.name }));
   const cats = catalog.categories.map((c) => ({ id: c.id, name: c.name }));

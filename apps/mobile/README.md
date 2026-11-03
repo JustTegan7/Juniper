@@ -1,5 +1,10 @@
-# Phone app (later)
+# Juniper One phone app (v2)
 
-The Expo (React Native) app goes here after the web app is proven. See `docs/decisions.md`.
+The Expo (React Native) app goes here once salons are using the web login. See `docs/decisions.md` and `docs/roadmap.md`.
 
-Each app built from this template reserves its own bundle ID, URL scheme and app name here.
+Reserved identifiers:
+- App name: Juniper One
+- iOS bundle ID / Android package: `com.evergreendigital.juniperone`
+- URL scheme: `juniperone`
+
+The app reuses `@evergreen/core` (availability, timesheet and time zone rules) and `@evergreen/brand` directly. Services in `apps/web/lib/services` get `/api/v1` route handlers for it.

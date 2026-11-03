@@ -195,6 +195,10 @@ export function BookingFlow({ menu, embedded = false, accountHref }: { menu: Pub
         </div>
       )}
 
+      {error && !done && (
+        <p className="rounded-lg border border-overdue/40 bg-surface p-3 text-sm font-semibold text-overdue" role="alert">{error}</p>
+      )}
+
       {step === 1 && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold">Choose a {v.service.toLowerCase()}</h2>
@@ -242,7 +246,7 @@ export function BookingFlow({ menu, embedded = false, accountHref }: { menu: Pub
       {step === 3 && query && (
         <div className="space-y-3">
           <h2 className="text-xl font-bold">Pick a time</h2>
-          <TimePicker slug={b.slug} days={menu.days} tz={b.timezone} query={query} value={null} onPick={setSlot} />
+          <TimePicker slug={b.slug} days={menu.days} tz={b.timezone} query={query} value={null} onPick={(x) => { setError(null); setSlot(x); }} />
         </div>
       )}
 
@@ -266,7 +270,6 @@ export function BookingFlow({ menu, embedded = false, accountHref }: { menu: Pub
               <span><span className="font-semibold">Booking policy.</span> {b.policy}</span>
             </label>
           )}
-          {error && <p className="text-sm text-overdue" role="alert">{error}</p>}
           <button className="w-full rounded-lg bg-[var(--brand)] px-4 py-3 font-semibold text-white disabled:opacity-60" disabled={pending}>{pending ? "Booking..." : "Book it"}</button>
           <p className="text-xs text-muted">We will email your confirmation with a link to change or cancel.</p>
         </form>

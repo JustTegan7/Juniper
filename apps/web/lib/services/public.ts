@@ -10,6 +10,7 @@ import {
   pickStaff,
   todayIn,
   utcToZoned,
+  weekdayOf,
   ymd,
   type AppointmentStatus,
 } from "@evergreen/core";
@@ -21,6 +22,7 @@ import { availability, changeStatus, insertAppointment, mailBusiness, moveAppoin
 import { loadCatalog, performers } from "./catalog";
 import { clientName, findOrCreateClient, normalizePhone } from "./clients";
 import { toWorkspace, type CtxWorkspace } from "./ctx";
+import { loadBusinessHours, loadStaffHours } from "./hours";
 import { loadMembers } from "./workspace";
 
 // Everything a client sees without a staff login: the booking page, the manage link
@@ -42,8 +44,10 @@ export interface PublicMenu {
 
 /** The public menu: online services, who performs them, and bookable days. */
 export async function loadPublicMenu(ws: CtxWorkspace): Promise<PublicMenu> {
-  const [catalog, members] = await Promise.all([loadCatalog(ws.id), loadMembers(ws.id)]);
-  const online = members.filter((m) => m.bookable && m.bookableOnline);
+  const [catalog, members, hours, biz] = await Promise.all([loadCatalog(ws.id), loadMembers(ws.id), loadStaffHours(ws.id), loadBusinessHours(ws.id)]);
+  const openWeekdays = new Set(biz.map((w) => w.weekday));
+  // People with no weekly schedule have no online times, so they are not shown.
+  const online = members.filter((m) => m.bookable && m.bookableOnline && (hours[m.membershipId] ?? []).length > 0);
   const onlineIds = online.map((m) => m.membershipId);
   const services = catalog.services.filter((s) => s.bookableOnline);
   const groups = new Map<string | null, PublicMenu["categories"][number]>();
@@ -79,7 +83,8 @@ export async function loadPublicMenu(ws: CtxWorkspace): Promise<PublicMenu> {
     },
     categories: [...groups.values()].filter((g) => g.services.length),
     staff: online.map((m) => ({ id: m.membershipId, name: m.name, title: m.title, bio: m.bio, color: m.color })),
-    days: bookableDays(todayIn(ws.timezone, new Date()), b.maxAdvanceDays),
+    // Days the business is closed are left out of the picker.
+    days: bookableDays(todayIn(ws.timezone, new Date()), b.maxAdvanceDays).filter((d) => openWeekdays.has(weekdayOf(d))),
   };
 }
 

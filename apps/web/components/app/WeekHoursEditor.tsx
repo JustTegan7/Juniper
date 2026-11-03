@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toHm, WEEKDAYS, type WeeklyHours } from "@evergreen/core";
-import type { ActionResult } from "../../app/(app)/actions";
+import type { ActionResult } from "../../lib/action-result";
 import { useAct } from "./useAct";
 
 type Row = { weekday: number; start: string; end: string };

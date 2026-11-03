@@ -105,7 +105,7 @@ export async function createBusiness(raw: unknown) {
 }
 
 /** Adds someone to a business (used when an invite is accepted). Safe to call twice. */
-export async function addMember(workspaceId: string, userId: string, role: Role, title: string | null) {
+export async function addMember(workspaceId: string, userId: string, role: Role, title: string | null, opts: { bookable?: boolean } = {}) {
   const existing = await db().select({ id: memberships.id, deletedAt: memberships.deletedAt }).from(memberships).where(eq(memberships.workspaceId, workspaceId));
   const mine = await db()
     .select()
@@ -119,7 +119,7 @@ export async function addMember(workspaceId: string, userId: string, role: Role,
   }
   const [m] = await db()
     .insert(memberships)
-    .values({ workspaceId, userId, role, title, color: memberColor(existing.length), sortOrder: existing.length })
+    .values({ workspaceId, userId, role, title, color: memberColor(existing.length), sortOrder: existing.length, bookable: opts.bookable ?? true, bookableOnline: opts.bookable ?? true })
     .returning({ id: memberships.id });
   return m.id;
 }

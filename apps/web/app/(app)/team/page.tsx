@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { formatDay, formatMinutes, ROLE_LABELS } from "@evergreen/core";
-import { getCtx, requireManager } from "../../../lib/services/ctx";
+import { redirect } from "next/navigation";
+import { isManager } from "@evergreen/core";
+import { getCtx } from "../../../lib/services/ctx";
 import { loadOverrides, loadStaffHours } from "../../../lib/services/hours";
 import { loadMembers, loadPendingInvites } from "../../../lib/services/workspace";
 import { emailEnabled } from "../../../lib/email";
@@ -11,7 +13,8 @@ export const metadata: Metadata = { title: "Team" };
 
 export default async function TeamPage({ searchParams }: { searchParams: Promise<{ person?: string }> }) {
   const ctx = await getCtx();
-  requireManager(ctx);
+  // Owners and managers only. Team members go back to their day.
+  if (!isManager(ctx.role)) redirect("/today");
   const { person } = await searchParams;
   const [members, invites, hours, overrides] = await Promise.all([
     loadMembers(ctx.workspace.id),
@@ -41,7 +44,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{m.name}{m.id === ctx.userId ? " (you)" : ""}</p>
                 <p className="truncate text-sm text-muted">
-                  {[m.title, ROLE_LABELS[m.role], m.bookable ? (m.bookableOnline ? "Bookable online" : "Takes appointments") : "No appointments"].filter(Boolean).join(" · ")}
+                  {[m.title && m.title !== ROLE_LABELS[m.role] ? m.title : null, ROLE_LABELS[m.role], m.bookable ? (m.bookableOnline ? "Bookable online" : "Takes appointments") : "No appointments"].filter(Boolean).join(" · ")}
                 </p>
                 <p className="text-xs text-muted">
                   {(hours[m.membershipId] ?? []).length

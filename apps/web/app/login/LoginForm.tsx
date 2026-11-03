@@ -42,7 +42,7 @@ export function LoginForm({ next, startForgot = false, justReset = false }: { ne
     <div className="card w-full max-w-sm p-6">
       <h1 className="text-2xl font-bold">{mode === "in" ? "Welcome back" : mode === "up" ? "Create your login" : "Forgot your password?"}</h1>
       <p className="mt-1 text-sm text-muted">
-        {mode === "in" ? "Log in to your account." : mode === "up" ? "For invited team members. Use the email you were invited with." : "We will email you a link to set a new one."}
+        {mode === "in" ? "Log in to your account." : mode === "up" ? "For Evergreen Digital admins only. Team members join from their invite link." : "We will email you a link to set a new one."}
       </p>
       {justReset && mode === "in" && <p className="mt-3 rounded-lg bg-surface-2 p-3 text-sm font-semibold">Password saved. Log in with your new password.</p>}
       {mode === "forgot" && sent ? (
@@ -88,13 +88,10 @@ export function LoginForm({ next, startForgot = false, justReset = false }: { ne
           Forgot password?
         </button>
       )}
-      {mode === "in" ? (
-        <p className="mt-2 text-center text-sm text-muted">New to the team? Open the invite link your manager sent you.</p>
-      ) : (
-        <button type="button" className="mt-2 w-full text-center text-sm text-muted underline" onClick={() => { setMode("in"); setSent(false); setError(null); }}>
-          Back to log in
-        </button>
-      )}
+      {mode === "in" && <p className="mt-2 text-center text-sm text-muted">New to the team? Open the invite link your manager sent you.</p>}
+      <button type="button" className="mt-2 w-full text-center text-xs text-muted underline" onClick={() => { setMode(mode === "in" ? "up" : "in"); setSent(false); setError(null); }}>
+        {mode === "in" ? "Juniper One admin setup" : "Back to log in"}
+      </button>
     </div>
   );
 }

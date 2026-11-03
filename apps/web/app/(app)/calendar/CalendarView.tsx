@@ -116,7 +116,7 @@ export function CalendarView(p: Props) {
         <p className="card mt-6 p-10 text-center text-muted">Nobody takes appointments yet. Add your team and turn on &quot;Takes appointments&quot; on the Team page.</p>
       ) : (
         <div className="card mt-4 overflow-x-auto">
-          <div className="flex min-w-max">
+          <div className="flex w-full min-w-max">
             {/* Time gutter */}
             <div className="sticky left-0 z-20 w-14 shrink-0 border-r border-line bg-surface">
               <div className="h-12 border-b border-line" />
@@ -129,7 +129,7 @@ export function CalendarView(p: Props) {
             {p.columns.map((col) => {
               const editable = p.canEditAll || col.id === p.myMembershipId;
               return (
-                <div key={col.id} className="w-44 shrink-0 border-r border-line last:border-r-0 sm:w-52">
+                <div key={col.id} className="min-w-44 flex-1 border-r border-line last:border-r-0 sm:min-w-52">
                   <div className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b border-line bg-surface px-2">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: col.color }} />
                     <div className="min-w-0">
@@ -167,15 +167,17 @@ export function CalendarView(p: Props) {
                     })}
                     {visible
                       .filter((i) => i.membershipId === col.id)
-                      .map((i) => {
+                      .map((i, idx, list) => {
                         const s = utcToZoned(new Date(i.startsAt), p.tz).minutes;
                         const total = i.activeBefore + i.processing + i.activeAfter;
+                        // Booked inside someone else's time (usually their processing): indent so both stay visible.
+                        const nested = list.slice(0, idx).some((o) => new Date(o.startsAt) <= new Date(i.startsAt) && new Date(o.endsAt) > new Date(i.startsAt));
                         return (
                           <button
                             key={i.id}
                             type="button"
                             onClick={() => setOpenId(i.id)}
-                            className={`absolute inset-x-1 overflow-hidden rounded-md text-left text-[11px] leading-tight text-white shadow-sm ${STATUS_STYLE[i.status]}`}
+                            className={`absolute right-1 overflow-hidden rounded-md text-left text-[11px] leading-tight text-white shadow-sm ${nested ? "left-[38%] z-[5] ring-2 ring-surface" : "left-1"} ${STATUS_STYLE[i.status]}`}
                             style={{ top: y(s), height: Math.max(18, total * PX_PER_MIN) }}
                             aria-label={`${i.clientName}, ${i.serviceName}, ${formatTimeIn(new Date(i.startsAt), p.tz)}`}
                           >
@@ -187,7 +189,7 @@ export function CalendarView(p: Props) {
                               />
                             )}
                             {i.activeAfter > 0 && <span className="absolute inset-x-0" style={{ top: (i.activeBefore + i.processing) * PX_PER_MIN, height: i.activeAfter * PX_PER_MIN, background: col.color }} />}
-                            <span className="relative block px-1.5 py-1 drop-shadow-[0_1px_1px_rgba(0,0,0,.35)]">
+                            <span className="absolute inset-x-0 top-0 block px-1.5 py-1 drop-shadow-[0_1px_1px_rgba(0,0,0,.35)]">
                               <span className="block truncate font-bold">{i.clientName}</span>
                               <span className="block truncate">{formatTimeIn(new Date(i.startsAt), p.tz)} {i.serviceName}</span>
                               {i.source === "online" && <span className="block truncate opacity-90">Booked online</span>}
