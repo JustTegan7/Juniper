@@ -2,8 +2,8 @@
 export const siteConfig = {
   businessName: "Juniper One",
   tagline: "Online booking, team schedules and the time clock in one place. Built for salons, ready for any appointment business.",
-  // TEMPLATE: set NEXT_PUBLIC_SITE_URL in Vercel once the domain is chosen.
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://juniperone.com",
+  // Production domain (set up on Vercel). NEXT_PUBLIC_SITE_URL overrides it for previews.
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://juniperbooking.com",
   parent: "Evergreen Digital Co.",
   parentUrl: "https://evergreendigitalco.com",
 

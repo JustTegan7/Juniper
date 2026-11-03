@@ -4,9 +4,9 @@
 Booking page and embed, staff calendar, clients, services with processing time, schedules, time off, time clock, timesheets with CSV, email confirmations and reminders, multi-business admin. Pilot: Barclay's Salon, switching from Envision once v1 is live.
 
 ### Before Barclay's goes live
-- [ ] Pick the domain (juniperone.com or similar), set `NEXT_PUBLIC_SITE_URL` and `BETTER_AUTH_URL`
+- [x] Domain: juniperbooking.com (on Vercel). Set `BETTER_AUTH_URL=https://juniperbooking.com` in Vercel production
 - [ ] Create the Vercel project and Neon database, set env vars (see README)
-- [ ] Set up Resend on the domain (invites, confirmations, reminders, resets)
+- [ ] Set up Resend on juniperbooking.com (invites, confirmations, reminders, resets)
 - [ ] Create Barclay's in `/admin`, invite Ryan, enter his real services, prices and processing times
 - [ ] Each stylist: invite, weekly schedule, which services they do, price differences
 - [ ] Add the embed code to barclaysalon.com and link it from Google Business Profile
@@ -32,5 +32,5 @@ Checkout at the front desk, tips, gift cards, sales reports, commissions. Paymen
 ## Later
 - SMS confirmations and reminders (Twilio, needs A2P 10DLC registration). The email layer in `lib/notify.ts` is where it plugs in.
 - Multiple locations per business
-- Custom domains per business (book.barclaysalon.com)
+- Custom domains per business (book.barclaysalon.com), or subdomains like barclays.juniperbooking.com
 - Connect to Grove and other Evergreen apps through Canopy once clients use more than one

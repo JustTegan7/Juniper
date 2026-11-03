@@ -36,6 +36,7 @@ Open http://localhost:3000/login, choose **Juniper One admin setup**, and create
 
 ## Vercel settings
 - Root Directory: `apps/web`. Build command: default (`vercel-build` runs migrations, then `next build`).
+- Domain: juniperbooking.com. Booking links look like `https://juniperbooking.com/b/barclays`.
 - Environment variables: see `apps/web/.env.local.example`. Required: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `PLATFORM_ADMINS`, `CRON_SECRET`. For email: `RESEND_API_KEY`, `EMAIL_FROM`.
 - Cron: `apps/web/vercel.json` runs the reminder emails daily at 17:00 UTC (9 or 10 AM Pacific).
 - The Neon database needs the `btree_gist` extension. Migration 0002 turns it on (Neon allows it).

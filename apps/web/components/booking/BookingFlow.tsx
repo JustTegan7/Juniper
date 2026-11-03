@@ -102,7 +102,7 @@ function icsFor(d: Done, business: PublicMenu["business"], minutes: number) {
     "VERSION:2.0",
     "PRODID:-//Juniper One//Booking//EN",
     "BEGIN:VEVENT",
-    `UID:${d.token.slice(0, 16)}@juniperone`,
+    `UID:${d.token.slice(0, 16)}@juniperbooking.com`,
     `DTSTAMP:${f(new Date())}`,
     `DTSTART:${f(start)}`,
     `DTEND:${f(end)}`,
