@@ -3,7 +3,7 @@
 Booking, schedules, time clock and time off for salons and other appointment businesses. Sold standalone and built into Evergreen Digital websites. Built from the Evergreen Digital App Template; improvements every app should get are listed in `docs/BUILD-NOTES.md` to copy back. Read `docs/decisions.md` before changing structure, and add to it whenever a decision is made.
 
 ## Stack
-Next.js 16 App Router + TypeScript + Tailwind v4 (`apps/web`), Neon Postgres with Drizzle ORM and drizzle-kit migrations (`packages/db`), Better Auth (email and password for staff, magic links for clients), hosted on Vercel with Root Directory `apps/web`. npm workspaces monorepo. Phone app later with Expo (`apps/mobile`).
+Next.js 16 App Router + TypeScript + Tailwind v4 (`apps/web`), Neon Postgres with Drizzle ORM and drizzle-kit migrations (`packages/db`), Better Auth (email and password for staff, magic links for clients), hosted on Vercel with Root Directory `apps/web`. npm workspaces monorepo. Phone app for owners and staff with Expo (`apps/mobile`, talks to `/api/v1`).
 
 ## Rules
 - Many businesses share one app. Every table has `workspace_id`, and every query is scoped to `ctx.workspace.id` (staff) or to the business found by slug (public pages). Public code trusts only the slug, a manage link secret, or a signed-in client's verified email.

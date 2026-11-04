@@ -42,8 +42,31 @@ Success: `{ "data": ... }`. Failure: `{ "error": { "code", "message" } }` with c
 Appointment statuses: `booked`, `confirmed`, `checked_in`, `completed`, `cancelled`, `no_show`. Times are ISO instants; days are `YYYY-MM-DD` in the business time zone.
 
 ### Not in Sprint 1
-- No Expo app yet (Sprint 2).
+- No Expo app yet (built in Sprint 2).
 - No push notifications, no offline sync, no rate limit on `/api/v1` beyond Better Auth's on `/api/auth`.
 - Before a real phone build: add the production `BETTER_AUTH_URL` and any `exp://` dev origin to `EXTRA_TRUSTED_ORIGINS` for local testing only.
 
-## Sprint 2: Expo app shell - next
+## Sprint 2: Expo app shell (2026-11-04) - done
+
+Branch `v2/expo-shell`. Decisions are in `docs/decisions.md` under "Juniper v2, Sprint 2".
+
+### Built
+- Expo SDK 58 app in `apps/mobile` (`@evergreen/mobile`, npm workspace), Expo Router, TypeScript. Name Juniper, scheme `juniper`, `com.evergreendigital.juniper`.
+- Sign in with email and password (`expoClient`, token from `set-auth-token` in SecureStore). Sign out clears the token and the saved business.
+- API client `lib/api.ts`: bearer and `x-juniper-workspace` headers, `{ data }` and `{ error }` parsing, sign out on 401, friendly network errors. Types in `lib/types.ts`.
+- App shell: signed out goes to sign in; signed in loads `/me`; business switcher for several businesses (saved in SecureStore, sent as the header); friendly `no_workspace` screen.
+- Tabs: Today (appointments, mine or all, pull to refresh, Confirm, Check in, Complete, No show, Cancel with confirm), Clock and Time off (read only), More (you, business, switch business, sign out).
+- Brand from `@evergreen/brand` (light and dark), Fraunces and DM Sans, words from `workspace.vocab`. App icon, adaptive icon and splash from the brand mark.
+- Tests: 28 in `apps/mobile/lib` (API client headers, 401 sign out, error parsing, business switcher, status actions).
+
+### How it was checked
+Root `typecheck`, `test`, `lint` and `build`; `expo export --platform android` (bundles); `npx expo-doctor` (see the PR for results).
+
+### Not in Sprint 2
+- Not tried on a real phone or simulator yet. Do that before Sprint 3 (README has the steps).
+- No clock in or out, breaks, or time off actions (Sprint 3). Today has no reopen for finished appointments.
+- Tab icons, offline support, push notifications, store builds (EAS) are later.
+- `/api/v1` has no response types shared with the web; the phone types in `lib/types.ts` are written by hand from the contract above. If a route changes, update them.
+
+## Sprint 3: Clock and Time off screens with actions - next
+
