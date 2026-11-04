@@ -1,4 +1,4 @@
-# Juniper One roadmap
+# Juniper roadmap
 
 ## v1: online booking and the employee portal (built 2026-11-02)
 Booking page and embed, staff calendar, clients, services with processing time, schedules, time off, time clock, timesheets with CSV, email confirmations and reminders, multi-business admin. Pilot: Barclay's Salon, switching from Envision once v1 is live.

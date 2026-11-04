@@ -14,7 +14,7 @@ import {
 import { INDUSTRIES, INDUSTRY_PRESETS, slugSchema, slugify, type Industry, type Role } from "@evergreen/core";
 import { batch, db } from "../db";
 
-export const MEMBER_COLORS = ["#3E4C78", "#4F7A62", "#C8643C", "#B07CC6", "#E8B33A", "#3F8FB0", "#B4536B", "#6C8CD5"];
+export const MEMBER_COLORS = ["#4F5D95", "#2F6B4F", "#C8643C", "#B07CC6", "#E8B33A", "#3F8FB0", "#B4536B", "#6C8CD5"];
 
 export function memberColor(index: number) {
   return MEMBER_COLORS[index % MEMBER_COLORS.length];

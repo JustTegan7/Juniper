@@ -1,11 +1,11 @@
-# Juniper One: Decisions
+# Juniper: Decisions
 
-Every architecture decision, with the reason. Claude reads this before changing structure. Newest at the bottom of each section. The first sections came with the Evergreen Digital App Template; Juniper One decisions start at "Juniper One v1".
+Every architecture decision, with the reason. Claude reads this before changing structure. Newest at the bottom of each section. The first sections came with the Evergreen Digital App Template; Juniper decisions start at "Juniper v1".
 
 ## Origin (2026-11-02)
 
 - **This template is Grove stripped down.** Grove (thegrovecms.com) is the first app on this stack and is live. Everything every app needs (logins, workspace, roles, app shell, marketing shell, database setup, CI) stays. Everything CRM specific was removed. See `docs/BUILD-NOTES.md`.
-- **Two Evergreen templates.** The Evergreen Digital Website Template is for static client sites with no database. This one is for apps with logins and a database. Evergreen Canopy (the shared suite core) and Juniper One are the first apps built from it.
+- **Two Evergreen templates.** The Evergreen Digital Website Template is for static client sites with no database. This one is for apps with logins and a database. Evergreen Canopy (the shared suite core) and Juniper are the first apps built from it.
 
 ## Stack (from Grove, 2026-10-06)
 
@@ -31,7 +31,7 @@ Every architecture decision, with the reason. Claude reads this before changing 
 
 ## Base behavior (from Grove Lite, 2026-10-30)
 
-- **One workspace for now.** Our own `workspaces` and `memberships` tables instead of Better Auth's organization plugin. Multi-business sign-up comes with the first app that needs it (Juniper One).
+- **One workspace for now.** Our own `workspaces` and `memberships` tables instead of Better Auth's organization plugin. Multi-business sign-up comes with the first app that needs it (Juniper).
 - **Sign-up is limited to an allowlist** (`APP_TEAM` env var, `email:role` pairs) checked on the server in a Better Auth hook. People create their own password and land in the workspace with the right role.
 - **Roles in the base are owner, manager, member.** Apps can add their own roles (stylist, front desk) on top.
 - **Migrations run on every Vercel deploy** (`vercel-build` script). No one runs them by hand against production.
@@ -45,7 +45,7 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - **Undo on toasts**: the service records what it changed, signs it with HMAC, and the browser holds only the token. The Toast component already supports an action button.
 - **Command palette**: Ctrl or Cmd K, ARIA combobox, uses the fuzzy matcher in `@evergreen/core` search.ts.
 
-## Juniper One v1 (2026-11-02)
+## Juniper v1 (2026-11-02)
 
 - **Standalone app, no shared core yet.** Grove and Juniper have different clients, so each is built from the app template on its own. Canopy (the shared core) comes when clients use more than one app.
 - **One app, many businesses.** One deployment and database. Each business is a workspace with a unique `slug` for its public booking link. People can belong to several businesses; the active one is a cookie (`jo_ws`) checked against their memberships on every request. This keeps working if a client buys their website out, because booking lives here, not in the website.
@@ -66,6 +66,15 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - **Abuse limits on public booking**: hidden honeypot field, at most 4 online bookings per email per business per day, Better Auth rate limits on auth routes.
 - **Deleting a business (2026-11-03).** Platform admins can permanently delete a business from `/admin`. The check runs in the server action and again inside `deleteBusiness` in `lib/services/admin.ts`. The admin types the business's link name, and if it has appointments or time entries they also tick a box; the server re-checks both, so the UI is not the guard. It is a hard delete in one batch: appointments first (they point at clients and staff with RESTRICT), then the `workspaces` row, which cascades to every table keyed by `workspace_id`. Hard rather than soft, because the slug unique index covers soft deleted rows and the link name must be reusable. Login accounts are kept (one person can belong to several businesses). The business's own `audit_log` rows cascade away with it, so the record of the delete is a structured `business_deleted` log line, not an audit row. Tests run the real migrations on PGlite (in-process Postgres) so cascades and constraints are the real ones.
 - **Deleting a client (2026-11-04).** Owners and managers can permanently delete a client from the client page (button on the profile and inside Edit). The role is checked in `deleteClientAction` and again in `deleteClient` (`lib/services/clients.ts`). The confirmation lists past, upcoming and cancelled appointments that go with the client; if any are upcoming and not cancelled, a checkbox is required and the service re-checks it (`acknowledgeUpcoming`). Hard delete in one batch, every statement filtered by `workspace_id`: appointments first (RESTRICT key; their segments cascade), then the client, plus a kept `audit_log` row and a `client_deleted` log line. Appointments are the only table that references clients. Notes live on the client row, the reminder flag on the appointment row, and the magic link login is a nullable pointer from the client to a shared `user`, which is left alone. Archive (`archiveClient`) still exists and keeps history.
+
+## Brand overhaul (2026-11-03)
+
+- **Name is Juniper.** The product is "Juniper", not "Juniper One". The domain is juniperbooking.com. The phone app id is `com.evergreendigital.juniper` and the URL scheme is `juniper`.
+- **Palette.** Juniper Deep (#1F3D36) is the primary. Sage Needle (#6F8F7F), Berry (#4F5D95) and Frost (#C9D2EA) support it, on a Cream (#F7F4EE) page. Clay is a highlight only, never a button background with white text. Dark mode stays, with matching dark tokens in `packages/brand`.
+- **Type.** Fraunces for headings and the wordmark, DM Sans for everything else.
+- **Logo.** A J with a leaf on top and a berry in the curve. The `Mark` component colors itself from `--logo-stem`, `--logo-leaf` and `--logo-berry`, so it follows light and dark. Static files live in `apps/web/public/brand`.
+- **Status colors.** Confirmed, pending and cancelled have their own tokens, so booking and shift states do not borrow brand colors.
+- **Per-business color.** Each business keeps its own `brand_color` on its booking pages, with the footer "Powered by Juniper". The database default for new businesses is still the old berry; changing it needs a migration.
 
 ## Not decided yet
 

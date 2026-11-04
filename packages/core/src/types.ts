@@ -1,4 +1,4 @@
-// Shared domain types. Juniper One keeps the template's three base roles and
+// Shared domain types. Juniper keeps the template's three base roles and
 // gives each person a job title (Stylist, Front desk) as data.
 
 /**

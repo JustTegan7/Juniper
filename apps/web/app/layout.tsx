@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Fraunces, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { baseMetadata } from "../lib/seo";
 
-const display = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], display: "swap" });
-const body = Figtree({ variable: "--font-figtree", subsets: ["latin"], display: "swap" });
+const display = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], display: "swap", axes: ["SOFT", "opsz"] });
+const body = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = baseMetadata;
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F6F7FB" },
-    { media: "(prefers-color-scheme: dark)", color: "#10141F" },
+    { media: "(prefers-color-scheme: light)", color: "#F7F4EE" },
+    { media: "(prefers-color-scheme: dark)", color: "#0F1815" },
   ],
 };
 

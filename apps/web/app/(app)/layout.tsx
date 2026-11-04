@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       ? db().select({ n: count() }).from(timeOff).where(and(eq(timeOff.workspaceId, ctx.workspace.id), eq(timeOff.status, "pending"), isNull(timeOff.deletedAt)))
       : Promise.resolve([{ n: 0 }]),
   ]);
-  const color = members.find((m) => m.id === ctx.userId)?.color ?? "#3E4C78";
+  const color = members.find((m) => m.id === ctx.userId)?.color ?? "#4F5D95";
   const v = ctx.workspace.vocab;
   const nav: NavItem[] = [
     { href: "/today", label: "Today", icon: "home" },

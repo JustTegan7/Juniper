@@ -100,7 +100,7 @@ function icsFor(d: Done, business: PublicMenu["business"], minutes: number) {
   const body = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Juniper One//Booking//EN",
+    "PRODID:-//Juniper//Booking//EN",
     "BEGIN:VEVENT",
     `UID:${d.token.slice(0, 16)}@juniperbooking.com`,
     `DTSTAMP:${f(new Date())}`,

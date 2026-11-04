@@ -17,7 +17,7 @@ export default function Home() {
       <section className="py-16 sm:py-24">
         <Container>
           <p className="pill bg-surface-2 text-muted">From {siteConfig.parent}</p>
-          <h1 className="mt-5 max-w-3xl text-5xl font-extrabold leading-[1.05] sm:text-6xl">Booking, schedules and the time clock, <span className="mark">in one place</span>.</h1>
+          <h1 className="mt-5 max-w-3xl text-5xl font-semibold leading-[1.05] sm:text-6xl">Booking, schedules and the time clock, <span className="mark">in one place</span>.</h1>
           <p className="mt-6 max-w-xl text-lg text-muted">{siteConfig.tagline}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href={`mailto:${siteConfig.email}?subject=Juniper%20One`} className="btn btn-primary">Talk to us</a>

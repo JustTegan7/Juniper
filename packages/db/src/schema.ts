@@ -125,7 +125,7 @@ export const memberships = pgTable(
   (t) => [uniqueIndex("memberships_ws_user").on(t.workspaceId, t.userId), index("memberships_user").on(t.userId)],
 );
 
-// ---------- Juniper One ----------
+// ---------- Juniper ----------
 
 /** Invite to join a business. The token is only ever stored hashed. */
 export const invites = pgTable(

@@ -1,4 +1,4 @@
-# Juniper One
+# Juniper
 
 Booking, schedules, time clock and time off for salons and other appointment businesses. Sold standalone and built into Evergreen Digital websites. Built from the Evergreen Digital App Template; improvements every app should get are listed in `docs/BUILD-NOTES.md` to copy back. Read `docs/decisions.md` before changing structure, and add to it whenever a decision is made.
 

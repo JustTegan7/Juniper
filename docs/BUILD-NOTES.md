@@ -1,6 +1,6 @@
 # Build notes
 
-Juniper One was built on 2026-11-02 from the Evergreen Digital App Template (commit 3d2379c), which was itself pulled from Grove. The template history is kept, so `git log` shows where the base ends.
+Juniper was built on 2026-11-02 from the Evergreen Digital App Template (commit 3d2379c), which was itself pulled from Grove. The template history is kept, so `git log` shows where the base ends.
 
 ## Copy back to the template
 These are general and every app should get them:
