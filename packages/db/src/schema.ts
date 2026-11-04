@@ -120,6 +120,10 @@ export const memberships = pgTable(
     bookableOnline: boolean("bookable_online").notNull().default(true),
     bio: text("bio"),
     sortOrder: integer("sort_order").notNull().default(0),
+    /** Phone push: new and cancelled bookings. Per person per business, follows them between phones. */
+    pushBookings: boolean("push_bookings").notNull().default(true),
+    /** Phone push: time off requests (managers) and decisions (the requester). */
+    pushTimeOff: boolean("push_time_off").notNull().default(true),
     ...stamps,
   },
   (t) => [uniqueIndex("memberships_ws_user").on(t.workspaceId, t.userId), index("memberships_user").on(t.userId)],
@@ -401,4 +405,25 @@ export const auditLog = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("audit_log_ws_entity").on(t.workspaceId, t.entity, t.entityId), index("audit_log_ws_created").on(t.workspaceId, t.createdAt)],
+);
+
+/**
+ * Expo push tokens for the phone app. One row per token: the same phone can sign in as someone else or
+ * switch business, which moves the row. A removed token keeps its row with deleted_at set.
+ */
+export const pushTokens = pgTable(
+  "push_tokens",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    membershipId: uuid("membership_id").notNull().references(() => memberships.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    platform: text("platform").notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    /** Latest Expo ticket id, checked later for DeviceNotRegistered receipts. */
+    ticketId: text("ticket_id"),
+    ticketAt: timestamp("ticket_at", { withTimezone: true }),
+    ...stamps,
+  },
+  (t) => [uniqueIndex("push_tokens_token").on(t.token), index("push_tokens_member").on(t.workspaceId, t.membershipId)],
 );

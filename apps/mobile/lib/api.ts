@@ -8,6 +8,7 @@ import type {
   ClockStatus,
   CreateTimeOffResponse,
   MessageResponse,
+  NotificationSettings,
   Me,
   TimeOffDecision,
   TimeOffInput,
@@ -108,6 +109,10 @@ export function createApi(deps: ApiDeps) {
     requestTimeOff: (input: TimeOffInput) => request<CreateTimeOffResponse>("POST", "/time-off", { body: { ...input } }),
     reviewTimeOff: (id: string, decision: TimeOffDecision, note?: string) =>
       request<MessageResponse>("POST", `/time-off/${encodeURIComponent(id)}/review`, { body: note ? { decision, note } : { decision } }),
+    registerDevice: (reg: { token: string; platform: "ios" | "android" }) => request<MessageResponse>("POST", "/devices", { body: { ...reg } }),
+    removeDevice: (token: string) => request<MessageResponse>("POST", "/devices/remove", { body: { token } }),
+    notificationSettings: () => request<NotificationSettings>("GET", "/notifications"),
+    setNotificationSettings: (change: Partial<NotificationSettings>) => request<NotificationSettings>("POST", "/notifications", { body: { ...change } }),
     cancelTimeOff: (id: string) => request<MessageResponse>("POST", `/time-off/${encodeURIComponent(id)}/cancel`),
   };
 }

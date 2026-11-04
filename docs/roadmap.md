@@ -26,7 +26,7 @@ Expo app for owners and staff only: today's schedule, appointment status, clock 
 - [x] Sprint 1: `/api/v1` API layer and mobile login (Better Auth Expo + bearer token)
 - [x] Sprint 2: Expo app shell (sign in, business switcher, Today, tabs, brand tokens)
 - [x] Sprint 3: Clock and Time off screens with actions
-- [ ] Sprint 4: push notifications for new bookings and time off decisions
+- [x] Sprint 4: push notifications for new bookings and time off decisions
 - [ ] Later sprints: store builds
 
 ## v3: storefront

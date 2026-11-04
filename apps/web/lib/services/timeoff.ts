@@ -7,6 +7,7 @@ import { db } from "../db";
 import { auditRow } from "../audit";
 import { sendEmail } from "../email";
 import { actorOf, canManageStaff, ForbiddenError, NotFoundError, requireManager, type Ctx } from "./ctx";
+import { notifyTimeOffDecision, notifyTimeOffRequested } from "./push";
 import { loadMembers } from "./workspace";
 
 export type TimeOffRow = typeof timeOff.$inferSelect & { name: string; color: string };
@@ -71,7 +72,8 @@ export async function requestTimeOff(ctx: Ctx, raw: unknown) {
   await d.insert(auditLog).values(auditRow(actorOf(ctx), "time_off", row.id, autoApprove ? "created_approved" : "requested", undefined, { startDay: v.startDay, endDay: v.endDay }));
 
   if (!autoApprove) {
-    // Let managers know there is something to review.
+    // Let managers know there is something to review (phone push first; it never throws).
+    await notifyTimeOffRequested(ctx.workspace, { timeOffId: row.id, requesterMembershipId: membershipId, requesterName: who.name, startDay: v.startDay, endDay: v.endDay });
     const managers = members.filter((m) => isManager(m.role) && m.membershipId !== membershipId);
     await Promise.all(
       managers.map((m) =>
@@ -127,6 +129,7 @@ export async function reviewTimeOff(ctx: Ctx, raw: unknown) {
       text: `Hi ${person.name.split(" ")[0]},\n\nYour time off ${row.startDay === row.endDay ? `on ${row.startDay}` : `from ${row.startDay} to ${row.endDay}`} was ${decision} by ${ctx.name}.${note ? `\n\nNote: ${note}` : ""}\n\n${ctx.workspace.name}`,
     });
   }
+  await notifyTimeOffDecision(ctx.workspace, { timeOffId: id, requesterMembershipId: row.membershipId, reviewerMembershipId: ctx.membershipId, decision, startDay: row.startDay, endDay: row.endDay });
   const conflicts = decision === "approved" ? await conflictsFor(ctx.workspace.id, row.membershipId, row.startsAt, row.endsAt) : [];
   return {
     message:

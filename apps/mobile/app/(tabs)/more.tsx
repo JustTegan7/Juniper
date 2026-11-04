@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { BusinessList } from "../../components/business-list";
+import { NotificationsCard } from "../../components/notifications-card";
 import { Button, Card, ErrorBanner, Heading, Screen, Text } from "../../components/ui";
 import { roleLabel } from "../../lib/format";
 import { useMe, useSession } from "../../lib/session";
@@ -49,6 +50,7 @@ export default function More() {
             ) : null}
           </View>
         ) : null}
+        <NotificationsCard />
         <Button label="Sign out" variant="danger" onPress={() => void signOut()} />
       </ScrollView>
     </Screen>

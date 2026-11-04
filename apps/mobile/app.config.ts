@@ -20,10 +20,16 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     "expo-secure-store",
+    // Android notification color and the default channel name. The icon falls back to the app icon until a monochrome one is added.
+    ["expo-notifications", { color: "#1F3D36", defaultChannel: "default" }],
     ["expo-splash-screen", { image: "./assets/splash-icon.png", backgroundColor: "#1F3D36", imageWidth: 160 }],
   ],
   experiments: { typedRoutes: true },
-  extra: { apiUrl: process.env.EXPO_PUBLIC_API_URL ?? null },
+  extra: {
+    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? null,
+    // The EAS project id the Expo push token needs. Never hardcoded: set EXPO_PUBLIC_EAS_PROJECT_ID (or EAS_PROJECT_ID).
+    eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? process.env.EAS_PROJECT_ID ?? null },
+  },
 };
 
 export default config;

@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { PushManager } from "../components/push-manager";
 import { Button, Centered, ErrorBanner, Heading, Spinner } from "../components/ui";
 import { SessionProvider, useSession } from "../lib/session";
 
@@ -55,7 +56,9 @@ function Gate() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <>
+      {state.status === "ready" ? <PushManager /> : null}
+      <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={state.status === "signed-out"}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
@@ -69,6 +72,7 @@ function Gate() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="time-off-new" options={{ presentation: "modal" }} />
       </Stack.Protected>
-    </Stack>
+      </Stack>
+    </>
   );
 }

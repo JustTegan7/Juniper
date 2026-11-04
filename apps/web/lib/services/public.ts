@@ -23,6 +23,7 @@ import { loadCatalog, performers } from "./catalog";
 import { clientName, findOrCreateClient, normalizePhone } from "./clients";
 import { toWorkspace, type CtxWorkspace } from "./ctx";
 import { loadBusinessHours, loadStaffHours } from "./hours";
+import { notifyClientCancelled, notifyNewBooking } from "./push";
 import { loadMembers } from "./workspace";
 
 // Everything a client sees without a staff login: the booking page, the manage link
@@ -168,6 +169,7 @@ export async function publicBook(ws: CtxWorkspace, raw: unknown) {
   await Promise.all([
     sendConfirmation(v.email, v.firstName, mail, mailBusiness(ws), made.token),
     ws.settings.booking.notifyStaff ? sendStaffNewBooking(staff.email, `${v.firstName} ${v.lastName}`, mail, mailBusiness(ws)) : Promise.resolve(true),
+    notifyNewBooking(ws, { clientFirstName: v.firstName, serviceName: res.service.name, staffMembershipId: staffId, staffName: staff.name, startsAt: start, appointmentId: made.id }),
   ]);
   return {
     token: made.token!,
@@ -201,6 +203,7 @@ export async function cancelByToken(ws: CtxWorkspace, token: string) {
   await Promise.all([
     found.c.email ? sendCancelled(found.c.email, found.c.firstName, mail, mailBusiness(ws)) : Promise.resolve(true),
     staff && ws.settings.booking.notifyStaff ? sendStaffCancelled(staff.email, clientName(found.c), mail, mailBusiness(ws)) : Promise.resolve(true),
+    notifyClientCancelled(ws, { clientFirstName: found.c.firstName, serviceName: found.a.serviceName, staffMembershipId: found.a.membershipId, staffName: found.staffName, startsAt: found.a.startsAt, appointmentId: found.a.id }),
   ]);
   return { message: "Your appointment is cancelled." };
 }

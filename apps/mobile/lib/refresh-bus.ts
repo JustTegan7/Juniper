@@ -1,6 +1,7 @@
 // A tiny event bus so one screen can tell another "this changed" without a global store.
-// Used when the Request time off screen closes: the Time off list refreshes and shows the server's message.
-export type Topic = "time-off";
+// Used when the Request time off screen closes, and when a push notification arrives while the app is open:
+// the affected list refreshes. Topics: "time-off" (Time off tab), "today" (Today tab).
+export type Topic = "time-off" | "today";
 type Listener = (message?: string) => void;
 
 const listeners = new Map<Topic, Set<Listener>>();

@@ -133,3 +133,9 @@ export interface CreateTimeOffResponse {
   message: string;
   id: string;
 }
+
+/** GET and POST /notifications: this person's push choices for the active business. */
+export interface NotificationSettings {
+  bookings: boolean;
+  timeOff: boolean;
+}
