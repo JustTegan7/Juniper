@@ -1,6 +1,6 @@
 # Evergreen Digital App Template
 
-The starting point for every Evergreen Digital web app that needs logins and a database (Evergreen Canopy, Juniper One, and what comes next). It was pulled from Grove (thegrovecms.com) and stripped to the parts every app needs. For plain marketing sites with no database, use the Evergreen Digital Website Template instead. Read `docs/decisions.md` before changing structure, and add to it whenever a decision is made.
+The starting point for every Evergreen Digital web app that needs logins and a database (Evergreen Canopy, Juniper, and what comes next). It was pulled from Grove (thegrovecms.com) and stripped to the parts every app needs. For plain marketing sites with no database, use the Evergreen Digital Website Template instead. Read `docs/decisions.md` before changing structure, and add to it whenever a decision is made.
 
 ## Stack
 Next.js 16 App Router + TypeScript + Tailwind v4 (`apps/web`), Neon Postgres with Drizzle ORM and drizzle-kit migrations (`packages/db`), Better Auth (email and password, tables in Neon via the Drizzle adapter), hosted on Vercel with Root Directory `apps/web`. npm workspaces monorepo. Phone app later with Expo (`apps/mobile`).

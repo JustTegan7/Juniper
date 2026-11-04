@@ -1,4 +1,4 @@
-/* Juniper One booking embed. Usage:
+/* Juniper booking embed. Usage:
    <div data-juniper-booking="your-link-name"></div>
    <script src="https://YOUR-JUNIPER-DOMAIN/embed.js" async></script>
    Optional: add data-theme="light" or data-theme="dark" to the div to force a theme.

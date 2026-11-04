@@ -1,6 +1,6 @@
 // Single source of truth for the public site info (metadata, JSON-LD, footer, emails).
 export const siteConfig = {
-  businessName: "Juniper One",
+  businessName: "Juniper",
   tagline: "Online booking, team schedules and the time clock in one place. Built for salons, ready for any appointment business.",
   // Production domain (set up on Vercel). NEXT_PUBLIC_SITE_URL overrides it for previews.
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://juniperbooking.com",
@@ -21,9 +21,9 @@ export const siteConfig = {
     googleBusinessProfile: "",
   },
 
-  defaultTitle: "Juniper One | Booking and staff app for salons",
-  titleTemplate: "%s | Juniper One",
-  defaultDescription: "Juniper One gives salons and appointment businesses online booking, staff schedules, a time clock and time off requests, from Evergreen Digital Co.",
+  defaultTitle: "Juniper | Booking and staff app for salons",
+  titleTemplate: "%s | Juniper",
+  defaultDescription: "Juniper gives salons and appointment businesses online booking, staff schedules, a time clock and time off requests, from Evergreen Digital Co.",
   ogImage: "/og-image.png",
   locale: "en_US",
 

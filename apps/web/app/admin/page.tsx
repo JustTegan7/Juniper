@@ -12,7 +12,7 @@ import { CreateBusinessForm, DeleteBusiness, InviteOwner, SupportButton } from "
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
-/** Evergreen's own page for setting up businesses on Juniper One. */
+/** Evergreen's own page for setting up businesses on Juniper. */
 export default async function AdminPage() {
   const session = await getSession();
   if (!session) redirect("/login?next=/admin");
@@ -24,7 +24,7 @@ export default async function AdminPage() {
         <Logo />
         <Link href="/today" className="btn btn-ghost btn-sm">Open the app</Link>
       </div>
-      <h1 className="text-3xl font-bold">Juniper One admin</h1>
+      <h1 className="text-3xl font-bold">Juniper admin</h1>
       <section className="card p-5" aria-labelledby="h-new">
         <h2 id="h-new" className="font-bold">Add a business</h2>
         <CreateBusinessForm industries={INDUSTRIES.map((i) => ({ id: i, label: INDUSTRY_PRESETS[i].label }))} />

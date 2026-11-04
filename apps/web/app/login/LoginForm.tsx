@@ -90,7 +90,7 @@ export function LoginForm({ next, startForgot = false, justReset = false }: { ne
       )}
       {mode === "in" && <p className="mt-2 text-center text-sm text-muted">New to the team? Open the invite link your manager sent you.</p>}
       <button type="button" className="mt-2 w-full text-center text-xs text-muted underline" onClick={() => { setMode(mode === "in" ? "up" : "in"); setSent(false); setError(null); }}>
-        {mode === "in" ? "Juniper One admin setup" : "Back to log in"}
+        {mode === "in" ? "Juniper admin setup" : "Back to log in"}
       </button>
     </div>
   );

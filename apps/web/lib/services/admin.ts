@@ -13,7 +13,7 @@ export interface AdminCtx {
 
 export class NotPlatformAdminError extends Error {
   constructor() {
-    super("Only Juniper One admins can do that.");
+    super("Only Juniper admins can do that.");
   }
 }
 

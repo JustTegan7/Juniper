@@ -9,6 +9,7 @@ describe("brand tokens", () => {
   const map: Record<string, keyof typeof tokens.light> = {
     "--bg": "bg", "--surface": "surface", "--surface-2": "surface2", "--border": "border", "--fg": "fg", "--muted": "muted",
     "--primary": "primary", "--primary-fg": "primaryFg", "--accent": "accent", "--overdue": "overdue", "--today": "today",
+    "--sage": "sage", "--berry": "berry", "--confirmed": "confirmed", "--pending": "pending", "--cancelled": "cancelled",
   };
   for (const [v, k] of Object.entries(map)) {
     it(`${v} matches brand ${k}`, () => {

@@ -2,53 +2,77 @@
 
 /* Brand tokens. Mirrors packages/brand (tokens.test.ts keeps them in sync). */
 :root {
-  --bg: #F6F7FB;
+  --bg: #F7F4EE;
   --surface: #FFFFFF;
-  --surface-2: #EEF0F6;
-  --border: #DCE0EC;
-  --fg: #141A2B;
-  --muted: #596079;
-  --primary: #3E4C78;
+  --surface-2: #EFEBE2;
+  --border: #E3DFD5;
+  --fg: #1B2421;
+  --muted: #5B6862;
+  --primary: #1F3D36;
   --primary-fg: #FFFFFF;
-  --accent: #C9D3EA;
-  --accent-fg: #3E4C78;
-  --mark: #C9D3EA;
-  --overdue: #C8643C;
-  --today: #B9831A;
+  --accent: #C9D2EA;
+  --accent-fg: #3A4678;
+  --mark: #C9D2EA;
+  --overdue: #A94442;
+  --today: #C0643C;
+  --sage: #6F8F7F;
+  --berry: #4F5D95;
+  --confirmed: #2F6B4F;
+  --pending: #B7791F;
+  --cancelled: #A94442;
+  --logo-stem: #1F3D36;
+  --logo-leaf: #6F8F7F;
+  --logo-berry: #4F5D95;
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 18px;
+  --radius-lg: 20px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #10141F;
-    --surface: #171C2B;
-    --surface-2: #1F2638;
-    --border: #2C3550;
-    --fg: #E8EBF4;
-    --muted: #9AA3BE;
-    --primary: #A9B8EE;
-    --primary-fg: #141A2B;
-    --mark: rgba(169, 184, 238, 0.35);
-    --overdue: #E58A63;
-    --today: #E8B33A;
+    --bg: #0F1815;
+    --surface: #16221E;
+    --surface-2: #1E2D28;
+    --border: #2B3D37;
+    --fg: #EDEAE2;
+    --muted: #9DB0A7;
+    --primary: #9DB8A9;
+    --primary-fg: #0F1815;
+    --mark: rgba(157, 184, 169, 0.35);
+    --overdue: #E58A84;
+    --today: #E8A27C;
+    --sage: #9DB8A9;
+    --berry: #C9D2EA;
+    --confirmed: #6FBF9A;
+    --pending: #E3B25A;
+    --cancelled: #E58A84;
+    --logo-stem: #F7F4EE;
+    --logo-leaf: #9DB8A9;
+    --logo-berry: #C9D2EA;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #10141F;
-  --surface: #171C2B;
-  --surface-2: #1F2638;
-  --border: #2C3550;
-  --fg: #E8EBF4;
-  --muted: #9AA3BE;
-  --primary: #A9B8EE;
-  --primary-fg: #141A2B;
-  --mark: rgba(169, 184, 238, 0.35);
-  --overdue: #E58A63;
-  --today: #E8B33A;
+  --bg: #0F1815;
+  --surface: #16221E;
+  --surface-2: #1E2D28;
+  --border: #2B3D37;
+  --fg: #EDEAE2;
+  --muted: #9DB0A7;
+  --primary: #9DB8A9;
+  --primary-fg: #0F1815;
+  --mark: rgba(157, 184, 169, 0.35);
+  --overdue: #E58A84;
+  --today: #E8A27C;
+  --sage: #9DB8A9;
+  --berry: #C9D2EA;
+  --confirmed: #6FBF9A;
+  --pending: #E3B25A;
+  --cancelled: #E58A84;
+  --logo-stem: #F7F4EE;
+  --logo-leaf: #9DB8A9;
+  --logo-berry: #C9D2EA;
   color-scheme: dark;
 }
 
@@ -65,15 +89,21 @@
   --color-accent-fg: var(--accent-fg);
   --color-overdue: var(--overdue);
   --color-today: var(--today);
-  --font-display: var(--font-bricolage), system-ui, sans-serif;
-  --font-sans: var(--font-figtree), system-ui, sans-serif;
+  --color-sage: var(--sage);
+  --color-berry: var(--berry);
+  --color-confirmed: var(--confirmed);
+  --color-pending: var(--pending);
+  --color-cancelled: var(--cancelled);
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
 }
 
 html, body { background: var(--bg); color: var(--fg); }
 body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+h1, h2, h3 { font-weight: 600; }
 
-:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--berry); outline-offset: 2px; border-radius: 6px; }
 
 @layer components {
   .btn {
@@ -101,7 +131,7 @@ h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0
   .mark { background: linear-gradient(transparent 55%, var(--mark) 55%, var(--mark) 92%, transparent 92%); padding: 0 .1em; }
 }
 
-dialog::backdrop { background: rgb(20 26 43 / .45); }
+dialog::backdrop { background: rgb(15 24 21 / .5); }
 dialog { background: var(--surface); color: var(--fg); }
 
 @media (prefers-reduced-motion: reduce) {

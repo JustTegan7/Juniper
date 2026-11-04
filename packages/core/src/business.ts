@@ -1,4 +1,4 @@
-// Per-business settings and industry presets. Juniper One starts with salons but
+// Per-business settings and industry presets. Juniper starts with salons but
 // works for any appointment business, so words like "Stylist" are data, not code.
 
 import { z } from "zod";

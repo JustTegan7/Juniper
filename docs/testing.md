@@ -7,7 +7,7 @@
 
 1. `npx playwright install chromium` (inside `apps/web`).
 2. Use a Neon **dev** branch in `apps/web/.env.local`, never production.
-3. Add a test admin for local runs only, for example in `.env.local`: `PLATFORM_ADMINS=e2e@evergreendigitalco.com`, create that login once at http://localhost:3000/login (Juniper One admin setup), then create a test business at `/admin` with "Add me as an owner" ticked.
+3. Add a test admin for local runs only, for example in `.env.local`: `PLATFORM_ADMINS=e2e@evergreendigitalco.com`, create that login once at http://localhost:3000/login (Juniper admin setup), then create a test business at `/admin` with "Add me as an owner" ticked.
 4. Run it:
 
 ```powershell

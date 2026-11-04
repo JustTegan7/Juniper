@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Evergreen Digital staff who run Juniper One itself (PLATFORM_ADMINS env var,
+ * Evergreen Digital staff who run Juniper itself (PLATFORM_ADMINS env var,
  * comma separated emails). They can create businesses at /admin and invite each
  * business's first owner. They do not see a business's data unless they are a member.
  */

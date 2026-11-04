@@ -16,7 +16,7 @@ import { addMember, createBusiness } from "../../lib/services/workspace";
 async function requireAdmin() {
   const session = await getSession();
   if (!session) redirect("/login?next=/admin");
-  if (!isPlatformAdmin(session.user.email)) throw new Error("Only Juniper One admins can do that.");
+  if (!isPlatformAdmin(session.user.email)) throw new Error("Only Juniper admins can do that.");
   return session;
 }
 

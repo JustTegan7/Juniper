@@ -1,4 +1,4 @@
-# Juniper One
+# Juniper
 
 Online booking, team schedules, the time clock and time off in one app. Built for salons first (Barclay's Salon is the pilot) and ready for any appointment business. Sold standalone and built into Evergreen Digital websites. Built from the [Evergreen Digital App Template](https://github.com/JustTegan7/evergreen-app-template).
 
@@ -32,7 +32,7 @@ copy apps\web\.env.local.example apps\web\.env.local   # fill it in, use a Neon 
 npm run db:migrate
 npm run dev
 ```
-Open http://localhost:3000/login, choose **Juniper One admin setup**, and create your login with an email listed in `PLATFORM_ADMINS`. Then open `/admin` to add a business.
+Open http://localhost:3000/login, choose **Juniper admin setup**, and create your login with an email listed in `PLATFORM_ADMINS`. Then open `/admin` to add a business.
 
 ## Vercel settings
 - Root Directory: `apps/web`. Build command: default (`vercel-build` runs migrations, then `next build`).
