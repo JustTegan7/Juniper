@@ -4,7 +4,7 @@ Online booking, team schedules, the time clock and time off in one app. Built fo
 
 ## What v1 does
 - **Many businesses, one app.** Each business has its own team, settings and booking link (`/b/<link-name>`). Evergreen admins create businesses at `/admin`.
-- **Online booking** at `/b/<link-name>`, or embedded in any website with one line of code. Service, person (or "Any available"), day and time, then contact details. Email confirmation with a link to reschedule or cancel. Optional magic link account for returning clients.
+- **Online booking** at `/b/<link-name>`, or embedded in any website with one line of code (add `data-theme="light"` or `data-theme="dark"` to the embed div to force a theme; without it the form follows the visitor's device). Service, person (or "Any available"), day and time, then contact details. Email confirmation with a link to reschedule or cancel. Optional magic link account for returning clients.
 - **Processing time.** Services split into before / processing / after (plus cleanup). The staff member is free during processing, so a cut can be booked inside a color.
 - **No double booking, ever.** A Postgres exclusion constraint refuses overlapping busy time for one person, even when two clients press Book at the same moment. Staff can still double book on purpose with "Book anyway".
 - **Staff calendar.** Day view with a column per person, working hours, time off, now line, click to book, status (confirm, check in, complete, no show, cancel), move, notes.
