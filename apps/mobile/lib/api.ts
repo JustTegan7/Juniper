@@ -2,10 +2,15 @@
 import type {
   ApiErrorCode,
   AppointmentStatus,
+  BreakKind,
   ClientErrorCode,
+  ClockActionResponse,
   ClockStatus,
+  CreateTimeOffResponse,
   MessageResponse,
   Me,
+  TimeOffDecision,
+  TimeOffInput,
   TimeOffResponse,
   TimeOffScope,
   TodayResponse,
@@ -95,7 +100,15 @@ export function createApi(deps: ApiDeps) {
     setAppointmentStatus: (id: string, status: AppointmentStatus) =>
       request<MessageResponse>("POST", `/appointments/${encodeURIComponent(id)}/status`, { body: { status } }),
     clock: () => request<ClockStatus>("GET", "/clock"),
+    clockIn: () => request<ClockActionResponse>("POST", "/clock/in"),
+    clockOut: () => request<ClockActionResponse>("POST", "/clock/out"),
+    startBreak: (kind: BreakKind) => request<ClockActionResponse>("POST", "/clock/breaks/start", { body: { kind } }),
+    endBreak: () => request<ClockActionResponse>("POST", "/clock/breaks/end"),
     timeOff: (scope: TimeOffScope) => request<TimeOffResponse>("GET", "/time-off", { query: { scope } }),
+    requestTimeOff: (input: TimeOffInput) => request<CreateTimeOffResponse>("POST", "/time-off", { body: { ...input } }),
+    reviewTimeOff: (id: string, decision: TimeOffDecision, note?: string) =>
+      request<MessageResponse>("POST", `/time-off/${encodeURIComponent(id)}/review`, { body: note ? { decision, note } : { decision } }),
+    cancelTimeOff: (id: string) => request<MessageResponse>("POST", `/time-off/${encodeURIComponent(id)}/cancel`),
   };
 }
 

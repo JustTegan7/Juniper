@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text as RNText, View, type StyleProp, type TextProps, type TextStyle, type ViewStyle } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text as RNText, TextInput, View, type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fonts, radius, space, useColors } from "../lib/theme";
 import type { ReactNode } from "react";
@@ -72,6 +72,34 @@ export function ErrorBanner({ message }: { message: string }) {
   );
 }
 
+/** A short confirmation (the server's own message after a write). Announced to screen readers. */
+export function NoticeBanner({ message }: { message: string }) {
+  const c = useColors();
+  return (
+    <View accessibilityLiveRegion="polite" style={[styles.banner, { borderColor: c.confirmed, backgroundColor: c.surface }]}>
+      <Text style={{ color: c.confirmed, fontSize: 14 }}>{message}</Text>
+    </View>
+  );
+}
+
+/** Text field in the brand look (DM Sans, border, light and dark). */
+export function Input({ style, multiline, ...rest }: TextInputProps) {
+  const c = useColors();
+  return (
+    <TextInput
+      placeholderTextColor={c.muted}
+      multiline={multiline}
+      {...rest}
+      style={[
+        styles.input,
+        { fontFamily: fonts.body, color: c.fg, borderColor: c.border, backgroundColor: c.surface },
+        multiline ? { minHeight: 88, paddingTop: space.md, textAlignVertical: "top" } : null,
+        style,
+      ]}
+    />
+  );
+}
+
 export function Centered({ children }: { children: ReactNode }) {
   return <View style={styles.centered}>{children}</View>;
 }
@@ -93,6 +121,7 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: radius.md, padding: space.lg },
   button: { minHeight: 48, borderRadius: radius.md, borderWidth: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: space.lg },
   buttonSmall: { minHeight: 36, paddingHorizontal: space.md, borderRadius: radius.sm },
+  input: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: space.lg, minHeight: 48, fontSize: 16 },
   banner: { borderWidth: 1, borderRadius: radius.sm, padding: space.md },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", padding: space.xl, gap: space.md },
   pill: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2, alignSelf: "flex-start" },

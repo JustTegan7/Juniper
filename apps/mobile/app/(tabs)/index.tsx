@@ -1,5 +1,4 @@
-import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { Alert, FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import { Button, Card, Centered, ErrorBanner, Heading, Pill, Screen, Spinner, Text } from "../../components/ui";
 import { ApiError, errorMessage } from "../../lib/api";
@@ -33,22 +32,15 @@ export default function Today() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const { data, error, loading, refreshing, reload, pull } = useLoad(() => api.today(scope), [api, scope, me.workspace.id]);
-
-  // Fresh data each time the tab is opened.
-  useFocusEffect(
-    useCallback(() => {
-      void reload();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scope, me.workspace.id]),
-  );
+  // Loads once on open and quietly again each time the tab comes back into focus (see useLoad).
+  const { data, error, loading, refreshing, sync, pull } = useLoad(() => api.today(scope), [api, scope, me.workspace.id]);
 
   async function change(a: Appointment, status: AppointmentStatus) {
     setBusyId(a.id);
     setActionError(null);
     try {
       await api.setAppointmentStatus(a.id, status);
-      await reload();
+      await sync();
     } catch (e) {
       if (!(e instanceof ApiError && e.code === "unauthorized")) setActionError(errorMessage(e));
     } finally {
