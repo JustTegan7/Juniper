@@ -5,8 +5,9 @@ import { getSessionCookie } from "better-auth/cookies";
 // (The cookie check is a fast first gate; every page and service also
 // checks the real session on the server.)
 const PUBLIC = new Set(["/", "/login", "/reset-password", "/privacy", "/terms", "/robots.txt", "/sitemap.xml", "/join", "/embed.js"]);
-// Client booking pages, the embed, auth endpoints and the cron (which checks its own secret).
-const PUBLIC_PREFIXES = ["/b/", "/embed/", "/api/auth/", "/api/cron/"];
+// Client booking pages, the embed, auth endpoints, the cron (which checks its own secret) and the
+// phone API (which sends a bearer token, not a cookie, and checks the session in every handler).
+const PUBLIC_PREFIXES = ["/b/", "/embed/", "/api/auth/", "/api/cron/", "/api/v1/"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -3,7 +3,8 @@ import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { magicLink } from "better-auth/plugins";
+import { bearer, magicLink } from "better-auth/plugins";
+import { expo } from "@better-auth/expo";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { clients, invites, schema, workspaces } from "@evergreen/db";
 import { db } from "./db";
@@ -13,6 +14,8 @@ import { siteConfig } from "./site-config";
 import { hashToken } from "./tokens";
 
 export const INVITE_HEADER = "x-juniper-invite";
+/** URL scheme reserved for the phone app (see apps/mobile/README.md). */
+export const MOBILE_SCHEME = "juniper";
 
 /** True when the request carries a live invite secret for this email. */
 async function hasInvite(email: string, token: string | null | undefined) {
@@ -42,9 +45,10 @@ function createAuth() {
   return betterAuth({
     secret: process.env.BETTER_AUTH_SECRET,
     baseURL: process.env.BETTER_AUTH_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined),
-    // When the Expo app is added: add the expo() plugin and the app's URL scheme here.
     trustedOrigins: [
       siteConfig.url,
+      // The phone app (Expo) signs in from its own URL scheme. Dev builds (exp://) go in EXTRA_TRUSTED_ORIGINS.
+      `${MOBILE_SCHEME}://`,
       ...(process.env.EXTRA_TRUSTED_ORIGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
       ...[process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
         .filter(Boolean)
@@ -107,6 +111,10 @@ function createAuth() {
           });
         },
       }),
+      // Phone app: expo() handles the app's origin and cookie flow; bearer() lets it send the signed
+      // session token (from the set-auth-token header, kept in SecureStore) as Authorization: Bearer.
+      expo(),
+      bearer({ requireSignature: true }),
       nextCookies(),
     ],
   });

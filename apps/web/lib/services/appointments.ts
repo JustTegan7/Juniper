@@ -29,7 +29,7 @@ import { sendCancelled, sendConfirmation, sendRescheduled, type MailBusiness } f
 import { hashToken, newToken } from "../tokens";
 import { loadCatalog, performers, timingFor, type Catalog, type Service } from "./catalog";
 import { clientName, formatPhone } from "./clients";
-import { actorOf, canManageStaff, ForbiddenError, type Ctx, type CtxWorkspace } from "./ctx";
+import { actorOf, canManageStaff, ForbiddenError, NotFoundError, type Ctx, type CtxWorkspace } from "./ctx";
 import { loadBusinessHours, loadOverrides, loadStaffHours } from "./hours";
 import { approvedTimeOff } from "./timeoff";
 import { loadMembers, type Member } from "./workspace";
@@ -306,7 +306,7 @@ export async function bookByStaff(ctx: Ctx, raw: unknown) {
 
 async function loadOwned(ctx: Ctx, id: string) {
   const [a] = await db().select().from(appointments).where(and(eq(appointments.id, id), eq(appointments.workspaceId, ctx.workspace.id), isNull(appointments.deletedAt)));
-  if (!a) throw new Error("That appointment was not found.");
+  if (!a) throw new NotFoundError("That appointment was not found.");
   if (!canManageStaff(ctx, a.membershipId)) throw new ForbiddenError("You can only change appointments on your own calendar.");
   return a;
 }
