@@ -3,7 +3,7 @@ import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { appointments, auditLog, clients, memberships, user } from "@evergreen/db";
 import { optEmail } from "@evergreen/core";
-import { db } from "../db";
+import { batch, db } from "../db";
 import { auditRow } from "../audit";
 import { actorOf, requireManager, type Ctx } from "./ctx";
 
@@ -59,6 +59,74 @@ export async function archiveClient(ctx: Ctx, raw: unknown) {
   await db().update(clients).set({ deletedAt: new Date() }).where(and(eq(clients.id, id), eq(clients.workspaceId, ctx.workspace.id)));
   await db().insert(auditLog).values(auditRow(actorOf(ctx), "client", id, "archived"));
   return { message: "Client archived. Their past appointments are kept." };
+}
+
+export type ClientDeleteSummary = { past: number; upcoming: number; cancelled: number; total: number };
+
+/**
+ * How many appointments deleting a client would remove, scoped to this business.
+ * Cancelled ones are counted on their own. "Upcoming" is not cancelled and starts now or later.
+ * Soft deleted appointments still block the delete (RESTRICT key), so they are counted as well.
+ */
+async function deleteSummary(workspaceId: string, clientId: string, now: Date): Promise<ClientDeleteSummary> {
+  const rows = await db()
+    .select({ status: appointments.status, startsAt: appointments.startsAt })
+    .from(appointments)
+    .where(and(eq(appointments.clientId, clientId), eq(appointments.workspaceId, workspaceId)));
+  const s = { past: 0, upcoming: 0, cancelled: 0, total: rows.length };
+  for (const r of rows) {
+    if (r.status === "cancelled") s.cancelled++;
+    else if (r.startsAt.getTime() >= now.getTime()) s.upcoming++;
+    else s.past++;
+  }
+  return s;
+}
+
+/** Owners and managers only. Feeds the delete confirmation. */
+export async function getClientDeleteSummary(ctx: Ctx, raw: unknown, now: Date = new Date()) {
+  requireManager(ctx);
+  const { id } = z.object({ id: z.uuid() }).parse(raw);
+  return deleteSummary(ctx.workspace.id, id, now);
+}
+
+const deleteClientInput = z.object({
+  id: z.uuid(),
+  /** Must be true when the client has upcoming appointments that are not cancelled. */
+  acknowledgeUpcoming: z.boolean().default(false),
+});
+
+/**
+ * Permanently deletes a client and all their appointments, in one transaction.
+ *
+ * Appointments point at clients with ON DELETE RESTRICT, so they go first; their busy-time
+ * segments cascade from the appointment. Nothing else references a client: notes and the
+ * reminder flag are columns on the client and appointment rows, and the linked login
+ * (magic link account) is only a nullable pointer from the client to a shared user, so the
+ * login itself stays. Every statement is filtered by ctx.workspace.id, so another business
+ * can never be touched even with a guessed id. The audit row (kept) and a log line record it.
+ */
+export async function deleteClient(ctx: Ctx, raw: unknown, now: Date = new Date()) {
+  requireManager(ctx);
+  const input = deleteClientInput.parse(raw);
+  const ws = ctx.workspace.id;
+
+  const [client] = await db().select().from(clients).where(and(eq(clients.id, input.id), eq(clients.workspaceId, ws)));
+  if (!client) throw new Error("That client was not found.");
+
+  const counts = await deleteSummary(ws, client.id, now);
+  if (counts.upcoming > 0 && !input.acknowledgeUpcoming) {
+    throw new Error("This client has upcoming appointments. Tick the box to confirm they will be removed.");
+  }
+
+  const d = db();
+  await batch([
+    d.delete(appointments).where(and(eq(appointments.clientId, client.id), eq(appointments.workspaceId, ws))),
+    d.delete(clients).where(and(eq(clients.id, client.id), eq(clients.workspaceId, ws))),
+    d.insert(auditLog).values(auditRow(actorOf(ctx), "client", client.id, "deleted", { name: clientName(client), email: client.email, phone: client.phone }, { appointmentsRemoved: counts })),
+  ]);
+
+  console.warn(JSON.stringify({ event: "client_deleted", by: ctx.userId, workspaceId: ws, clientId: client.id, counts, at: now.toISOString() }));
+  return { message: `${clientName(client)} was deleted.`, counts };
 }
 
 /** Search by name, email or phone. Empty query lists recent clients. */

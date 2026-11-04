@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { toResult, type ActionResult } from "../../lib/action-result";
-import { ACTIVE_WORKSPACE_COOKIE, getCtx, type Ctx } from "../../lib/services/ctx";
+import { ACTIVE_WORKSPACE_COOKIE, getCtx, requireManager, type Ctx } from "../../lib/services/ctx";
 import * as appts from "../../lib/services/appointments";
 import * as catalog from "../../lib/services/catalog";
 import * as clients from "../../lib/services/clients";
@@ -43,6 +43,15 @@ export const deleteOverrideAction = async (input: unknown) => run((c) => hours.d
 // Clients
 export const saveClientAction = async (input: unknown) => run((c) => clients.saveClient(c, input));
 export const archiveClientAction = async (input: unknown) => run((c) => clients.archiveClient(c, input));
+/** Owners and managers only. Checked here and again in the service. */
+export async function deleteClientAction(input: unknown) {
+  const ctx = await getCtx();
+  return toResult(async () => {
+    requireManager(ctx);
+    const r = await clients.deleteClient(ctx, input);
+    return { message: r.message };
+  });
+}
 export async function searchClientsAction(q: string) {
   const ctx = await getCtx();
   const rows = await clients.searchClients(ctx, String(q ?? "").slice(0, 100), 12);
