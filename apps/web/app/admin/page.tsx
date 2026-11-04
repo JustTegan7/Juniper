@@ -5,8 +5,9 @@ import { INDUSTRIES, INDUSTRY_PRESETS } from "@evergreen/core";
 import { Logo } from "../../components/Logo";
 import { isPlatformAdmin } from "../../lib/platform";
 import { getSession } from "../../lib/services/ctx";
+import { loadBusinessCounts } from "../../lib/services/admin";
 import { loadAllBusinesses } from "../../lib/services/workspace";
-import { CreateBusinessForm, InviteOwner, SupportButton } from "./AdminForms";
+import { CreateBusinessForm, DeleteBusiness, InviteOwner, SupportButton } from "./AdminForms";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export default async function AdminPage() {
   const session = await getSession();
   if (!session) redirect("/login?next=/admin");
   if (!isPlatformAdmin(session.user.email)) redirect("/today");
-  const all = await loadAllBusinesses();
+  const [all, counts] = await Promise.all([loadAllBusinesses(), loadBusinessCounts({ userId: session.user.id, email: session.user.email })]);
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
       <div className="flex items-center justify-between">
@@ -41,6 +42,7 @@ export default async function AdminPage() {
               </div>
               <InviteOwner workspaceId={w.id} />
               <SupportButton workspaceId={w.id} />
+              <DeleteBusiness business={{ id: w.id, name: w.name, slug: w.slug }} counts={counts[w.id]} />
             </li>
           ))}
           {!all.length && <li className="py-3 text-sm text-muted">No businesses yet.</li>}

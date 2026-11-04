@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { slugify } from "@evergreen/core";
-import { createBusinessAction, inviteOwnerAction, joinForSupportAction } from "./actions";
+import { createBusinessAction, deleteBusinessAction, inviteOwnerAction, joinForSupportAction } from "./actions";
+import { Dialog } from "../../components/app/Dialog";
 import { formObject } from "../../lib/form";
 
 type R = { ok: true; message: string; data?: string } | { ok: false; error: string };
@@ -67,4 +68,73 @@ export function InviteOwner({ workspaceId }: { workspaceId: string }) {
 export function SupportButton({ workspaceId }: { workspaceId: string }) {
   const [pending, start] = useTransition();
   return <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => start(() => joinForSupportAction(workspaceId))}>Open for support</button>;
+}
+
+type Counts = { appointments: number; clients: number; staff: number; timeEntries: number; services: number };
+
+/** Delete button and confirmation. The server checks the admin, the typed link name and the checkbox again. */
+export function DeleteBusiness({ business, counts }: { business: { id: string; name: string; slug: string }; counts: Counts }) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [ack, setAck] = useState(false);
+  const [r, setR] = useState<R | null>(null);
+  const [pending, start] = useTransition();
+  const hasData = counts.appointments > 0 || counts.timeEntries > 0;
+  const ready = typed.trim() === business.slug && (!hasData || ack);
+  const close = () => {
+    setOpen(false);
+    setTyped("");
+    setAck(false);
+    setR(null);
+  };
+  const rows: [string, number][] = [
+    ["Appointments", counts.appointments],
+    ["Clients", counts.clients],
+    ["Staff", counts.staff],
+    ["Time entries", counts.timeEntries],
+    ["Services", counts.services],
+  ];
+  return (
+    <>
+      <button type="button" className="btn btn-danger btn-sm" onClick={() => setOpen(true)}>Delete</button>
+      <Dialog open={open} onClose={close} title={`Delete ${business.name}?`}>
+        <form
+          className="space-y-4"
+          action={() =>
+            start(async () => {
+              const res = await deleteBusinessAction({ workspaceId: business.id, confirmSlug: typed, acknowledgeData: ack });
+              setR(res);
+              if (res.ok) setOpen(false);
+            })
+          }
+        >
+          <p className="text-sm">This permanently removes the business and everything below. It cannot be undone.</p>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg bg-surface-2 p-3 text-sm">
+            {rows.map(([label, n]) => (
+              <div key={label} className="contents">
+                <dt>{label}</dt>
+                <dd className="text-right font-semibold">{n}</dd>
+              </div>
+            ))}
+          </dl>
+          {hasData && (
+            <div className="rounded-lg border border-overdue p-3 text-sm" role="alert">
+              <p className="font-semibold text-overdue">This business has real history.</p>
+              <p className="mt-1">Its {counts.appointments} appointments and {counts.timeEntries} time entries (used for payroll) will be lost for good.</p>
+              <label className="mt-2 flex items-start gap-2"><input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-1" /> I understand these records will be permanently deleted.</label>
+            </div>
+          )}
+          <label className="block">
+            <span className="label">Type <strong>{business.slug}</strong> to confirm</span>
+            <input className="input" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} />
+          </label>
+          <Result r={r} />
+          <div className="flex justify-end gap-2">
+            <button type="button" className="btn btn-ghost" onClick={close}>Cancel</button>
+            <button className="btn btn-primary" disabled={!ready || pending}>{pending ? "Deleting..." : "Delete business"}</button>
+          </div>
+        </form>
+      </Dialog>
+    </>
+  );
 }

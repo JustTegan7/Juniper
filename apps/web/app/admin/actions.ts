@@ -9,6 +9,7 @@ import { db } from "../../lib/db";
 import { toResult } from "../../lib/action-result";
 import { isPlatformAdmin } from "../../lib/platform";
 import { ACTIVE_WORKSPACE_COOKIE, getSession } from "../../lib/services/ctx";
+import { deleteBusiness } from "../../lib/services/admin";
 import { issueInvite } from "../../lib/services/team";
 import { addMember, createBusiness } from "../../lib/services/workspace";
 
@@ -69,4 +70,13 @@ export async function joinForSupportAction(workspaceId: string) {
   if (!already) await addMember(id, session.user.id, "manager", "Evergreen support", { bookable: false });
   (await cookies()).set(ACTIVE_WORKSPACE_COOKIE, id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 });
   redirect("/today");
+}
+
+/** Permanently deletes a business. The service re-checks the platform admin and the typed link name. */
+export async function deleteBusinessAction(raw: unknown) {
+  return toResult(async () => {
+    const session = await requireAdmin();
+    const r = await deleteBusiness({ userId: session.user.id, email: session.user.email }, raw);
+    return { message: `${r.name} (/b/${r.slug}) was deleted.` };
+  });
 }
