@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Alert, FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import { Button, Card, Centered, ErrorBanner, Heading, Pill, Screen, Spinner, Text } from "../../components/ui";
 import { ApiError, errorMessage } from "../../lib/api";
 import { dayLabel, durationLabel, emptyToday, price, statusActions, statusLabel, timeRange, type StatusAction } from "../../lib/format";
+import { subscribe } from "../../lib/refresh-bus";
 import { useMe, useSession } from "../../lib/session";
 import { fonts, space, useColors, type Colors } from "../../lib/theme";
 import type { Appointment, AppointmentStatus, TodayScope } from "../../lib/types";
@@ -29,11 +31,23 @@ export default function Today() {
   const c = useColors();
   const { vocab } = me.workspace;
   const [scope, setScope] = useState<TodayScope>("mine");
+  // A tapped booking notification sends scope=all|mine and a changing "t" (see components/push-manager.tsx).
+  const params = useLocalSearchParams<{ scope?: string; t?: string }>();
+  useEffect(() => {
+    if (params.scope === "all" || params.scope === "mine") setScope(params.scope);
+  }, [params.scope, params.t]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Loads once on open and quietly again each time the tab comes back into focus (see useLoad).
   const { data, error, loading, refreshing, sync, pull } = useLoad(() => api.today(scope), [api, scope, me.workspace.id]);
+
+  // A notification arrived while the app is open: refresh quietly.
+  useEffect(
+    () => subscribe("today", () => void sync()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   async function change(a: Appointment, status: AppointmentStatus) {
     setBusyId(a.id);

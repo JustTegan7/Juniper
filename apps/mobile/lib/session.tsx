@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createApi, ApiError, errorMessage, type Api } from "./api";
 import { authClient, signInWithEmail } from "./auth-client";
 import { getApiUrl } from "./config";
+import { unregisterThisPhone } from "./notifications";
 import { resolveWorkspace } from "./switcher";
 import { clearSession, getToken, getWorkspaceId, setWorkspaceId } from "./storage";
 import type { BusinessRef, Me } from "./types";
@@ -113,6 +114,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    // Stop pushes to this phone first, while the token still works.
+    await unregisterThisPhone(api);
     try {
       await authClient.signOut();
     } catch {
@@ -120,7 +123,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
     await clearSession();
     setState({ status: "signed-out" });
-  }, []);
+  }, [api]);
 
   const chooseBusiness = useCallback(
     async (id: string) => {

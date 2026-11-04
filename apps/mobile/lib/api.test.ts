@@ -221,6 +221,28 @@ describe("time off writes", () => {
     expect(JSON.parse(String(calls[1].init.body))).toEqual({ decision: "denied" });
   });
 
+  it("registers and removes a push token with JSON bodies", async () => {
+    const { api, calls } = setup(() => json({ data: { message: "ok" } }));
+    await api.registerDevice({ token: "ExponentPushToken[abcdefgh1234]", platform: "ios" });
+    await api.removeDevice("ExponentPushToken[abcdefgh1234]");
+    expect(calls[0].url).toBe("https://api.example.test/api/v1/devices");
+    expect(JSON.parse(String(calls[0].init.body))).toEqual({ token: "ExponentPushToken[abcdefgh1234]", platform: "ios" });
+    expect(calls[1].url).toBe("https://api.example.test/api/v1/devices/remove");
+    expect(calls[1].init.method).toBe("POST");
+    expect(JSON.parse(String(calls[1].init.body))).toEqual({ token: "ExponentPushToken[abcdefgh1234]" });
+    expect(headersOf(calls[1])["Content-Type"]).toBe("application/json");
+  });
+
+  it("reads and changes push choices", async () => {
+    const { api, calls } = setup(() => json({ data: { bookings: true, timeOff: false } }));
+    expect(await api.notificationSettings()).toEqual({ bookings: true, timeOff: false });
+    await api.setNotificationSettings({ timeOff: false });
+    expect(calls[0].url).toBe("https://api.example.test/api/v1/notifications");
+    expect(calls[0].init.method).toBe("GET");
+    expect(calls[1].init.method).toBe("POST");
+    expect(JSON.parse(String(calls[1].init.body))).toEqual({ timeOff: false });
+  });
+
   it("posts a cancel with an empty JSON body", async () => {
     const { api, calls } = setup(() => json({ data: { message: "Time off cancelled." } }));
     await api.cancelTimeOff("t1");

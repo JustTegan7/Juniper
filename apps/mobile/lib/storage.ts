@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 // SecureStore keys may only use letters, numbers, ".", "-" and "_". Same "juniper" prefix as the auth client.
 const TOKEN_KEY = "juniper_bearer_token";
 const WORKSPACE_KEY = "juniper_workspace_id";
+const PUSH_TOKEN_KEY = "juniper_push_token";
 
 let tokenCache: string | null | undefined;
 let workspaceCache: string | null | undefined;
@@ -40,5 +41,19 @@ export async function setWorkspaceId(id: string | null): Promise<void> {
 export async function clearSession(): Promise<void> {
   tokenCache = null;
   workspaceCache = null;
-  await Promise.all([SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {}), SecureStore.deleteItemAsync(WORKSPACE_KEY).catch(() => {})]);
+  await Promise.all([SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {}), SecureStore.deleteItemAsync(WORKSPACE_KEY).catch(() => {}), SecureStore.deleteItemAsync(PUSH_TOKEN_KEY).catch(() => {})]);
+}
+
+/** The Expo push token last registered from this phone, so sign out can remove it from the server. */
+export async function getPushToken(): Promise<string | null> {
+  return read(PUSH_TOKEN_KEY);
+}
+
+export async function setPushToken(token: string | null): Promise<void> {
+  try {
+    if (token) await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
+    else await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
+  } catch {
+    // Best effort: without it, sign out just cannot tell the server which phone to stop.
+  }
 }

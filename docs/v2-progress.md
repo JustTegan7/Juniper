@@ -38,6 +38,10 @@ Success: `{ "data": ... }`. Failure: `{ "error": { "code", "message" } }` with c
 | POST | `/api/v1/time-off` | `{ startDay, endDay, allDay?, startTime?, endTime?, reason?, membershipId? }` | 201 `{ message, id }` |
 | POST | `/api/v1/time-off/:id/review` | `{ decision: "approved" \| "denied", note? }` | `{ message }` (owners and managers; managers cannot review their own) |
 | POST | `/api/v1/time-off/:id/cancel` | | `{ message }` |
+| POST | `/api/v1/devices` | `{ token, platform: "ios" \| "android" }` | `{ message }` (register or refresh this phone for the active business; the row moves if the token was elsewhere) |
+| POST | `/api/v1/devices/remove` | `{ token }` | `{ message }` (stop pushes to this phone; safe twice) |
+| GET | `/api/v1/notifications` | | `{ bookings, timeOff }` (this person's push choices, default on) |
+| POST | `/api/v1/notifications` | `{ bookings?, timeOff? }` | the new `{ bookings, timeOff }` |
 
 Appointment statuses: `booked`, `confirmed`, `checked_in`, `completed`, `cancelled`, `no_show`. Times are ISO instants; days are `YYYY-MM-DD` in the business time zone.
 
@@ -92,6 +96,36 @@ Sign in, clock in, start and end a meal break, clock out. Request time off as a 
 - Managers cancelling other people's requests, and changing an approved request from the app (Deny on an approved request is possible on the server, not offered here).
 - Timesheet view, editing clock entries, offline support, push notifications, store builds.
 
-## Sprint 4: push notifications - next
+## Sprint 4: push notifications (2026-11-04) - done
 
-Push for new bookings and time off decisions (Expo push service). Prompt for it is in the Sprint 3 PR.
+Branch `v2/push`. Decisions are in `docs/decisions.md` under "Juniper v2, Sprint 4".
+
+### Built
+- API: table `push_tokens` and two columns on `memberships` (`push_bookings`, `push_time_off`), migration `0003`. `POST /devices`, `POST /devices/remove`, `GET` and `POST /notifications` (see the contract table). Services `lib/services/devices.ts` and `lib/services/push.ts`, message text in `lib/services/push-messages.ts`, the Expo call in `lib/expo-push.ts`.
+- Pushes: new booking from the website or embed, and a booking cancelled by the client (the person it is booked with, plus owners and managers); a time off request (owners and managers except the requester); a time off decision (the requester, never the person who decided).
+- Cron `/api/cron/push-receipts` (daily, `CRON_SECRET`) removes tokens Expo reports as DeviceNotRegistered.
+- Phone: expo-notifications and expo-device, config plugin, Android channel, foreground banner plus quiet refresh, tap opens Today (scope All for someone else's booking) or Time off, switches business first when needed. Registers after sign in, business switch and token change; unregisters on sign out. More has a Notifications card: explains what you get, turns them on, handles denied (how to turn on in Settings) and shows a switch per kind from the server.
+- Tests: web 77 (was 51; new `lib/push.test.ts` runs against PGlite with the real migrations and a mocked Expo call and asserts who is and is not notified), mobile 84 (was 64; `lib/push.ts` rules, API calls).
+
+### How it was checked
+Root `typecheck`, `test` (mobile 84, web 77, core 30) and `lint` pass; `expo export --platform android` bundles. Not run here: root `build` (next/font cannot download Google Fonts without internet; the new routes compile under `tsc`) and the two network checks of `npx expo-doctor` (18 of 20 pass; the Expo config schema check and the React Native Directory check need Expo's servers). `npx expo install` also could not reach Expo, so the two packages were added with npm at the SDK 58 versions: run `npx expo install --check` where there is internet.
+
+### Before pushes can work for real
+- Create the EAS project (`npx eas init` in `apps/mobile`) and set `EXPO_PUBLIC_EAS_PROJECT_ID` (local `.env.local`, and EAS env for builds).
+- Android needs Firebase Cloud Messaging credentials uploaded to Expo (`google-services.json` for the build, FCM V1 service account key in EAS credentials). iOS needs an Apple developer account and a push key (EAS manages it).
+- Push needs a development build on a real phone. Expo Go on Android cannot receive remote pushes (SDK 53 and later); Expo Go on iOS is limited. Simulators cannot get a token.
+- `CRON_SECRET` must be set in Vercel (already used by reminders). Optional `EXPO_ACCESS_TOKEN` if Enhanced push security is turned on.
+
+### Manual check (NOT done, needs a real phone and a dev server)
+Turn notifications on in More. Book from the website as a client: the person booked with, owners and managers get a push; tapping opens Today (All when it is someone else's). Cancel it from the manage link: same people. Request time off as a team member: managers get a push. Approve and deny as a manager: the requester gets a push and tapping opens Time off. The person who made the change gets none. Turn each kind off in More and confirm it stops (and that it follows you to a second phone). Sign out and confirm that phone stops getting pushes. Deny permission in the system and check the Settings help. Also the open Sprint 3 check: clock in, break, clock out, request, cancel, approve, deny, light and dark, pickers on iOS and Android.
+
+### Not in Sprint 4
+- No push for appointments staff change in the app or web, rescheduled-by-client bookings, new clients, or reminders to staff before a shift.
+- No per-device choices (choices follow the person), no quiet hours, no badge counts, no notification inbox.
+- Receipts are checked once a day (Vercel Hobby cron limit), and only the latest ticket per token is kept.
+- No monochrome Android notification icon yet (the app icon is used).
+- Not tried on a real phone.
+
+## Sprint 5: store builds with EAS - next
+
+App icons and splash check, bundle ID and package, production API URL and `BETTER_AUTH_URL`, TestFlight and Play internal testing, privacy details.
