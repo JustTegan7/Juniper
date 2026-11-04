@@ -8,11 +8,12 @@ Identifiers:
 - URL scheme: `juniper`
 - Expo SDK 58, Expo Router, TypeScript
 
-## What is in it (Sprint 2)
+## What is in it
 
 - Email and password sign in (Better Auth `expoClient`, token in SecureStore)
 - Business switcher for people on more than one business, and a friendly screen for people on none
-- Tabs: Today (real), Clock and Time off (read only for now), More (who you are, business, switch business, sign out)
+- Tabs: Today (appointments and status actions), Clock (clock in and out, meal and rest breaks, live timer), Time off (Open and Past, request, cancel, approve and deny), More (who you are, business, switch business, sign out)
+- Request time off opens as a modal from the Time off tab (`app/time-off-new.tsx`) with the system date and time pickers
 
 ## Run it locally against a dev server
 
@@ -41,6 +42,7 @@ Notes:
 - The phone and the computer must be on the same Wi-Fi network.
 - Plain `http://` to a LAN address works in Expo Go and dev builds. A store build must use the real `https` address (`https://juniperbooking.com`) and the production `BETTER_AUTH_URL`.
 - If sign in fails with an origin error, step 5 is the usual cause.
+- To try Time off as an owner or manager and as a team member, sign in with two accounts in turn (a manager cannot approve their own request).
 
 ## Checks
 
@@ -50,10 +52,13 @@ From the repo root: `npm run typecheck && npm test && npm run lint && npm run bu
 
 - `app/` screens (Expo Router). `app/_layout.tsx` shows only the screens for the current session state.
 - `lib/api.ts` typed API client (headers, `{ data }` and `{ error }` parsing, sign out on 401). Plain TypeScript, unit tested.
+- `lib/use-load.ts` loads once on open, refreshes quietly when a tab is focused again, and takes an answer from a write with `setData` (no second request).
+- `lib/format.ts` display helpers and the timer and clock button rules; `lib/time-off.ts` review, cancel and picker rules. Both plain TypeScript, unit tested.
 - `lib/types.ts` response shapes in one file, re-using `@evergreen/core` types where they exist.
 - `lib/session.tsx` the session state machine. `lib/switcher.ts` the business switcher rules (tested).
 - `lib/auth-client.ts` Better Auth client. `lib/storage.ts` SecureStore for the token and business id.
 - `lib/theme.ts` colors, radius and fonts from `@evergreen/brand` (light and dark). Fraunces for headings, DM Sans for everything else.
+- Tab icons are Ionicons from `@expo/vector-icons`. Dates and times use `@react-native-community/datetimepicker` (version pinned to Expo SDK 58's list).
 - Words like Stylist and Client come from `workspace.vocab` in `/me`. No em dashes in UI copy.
 
 The app reuses `@evergreen/core` (time zone, status labels, formatting) and `@evergreen/brand` directly. Keep react and next out of `@evergreen/core` (a test enforces it).

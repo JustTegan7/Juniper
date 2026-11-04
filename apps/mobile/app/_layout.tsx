@@ -67,6 +67,7 @@ function Gate() {
       </Stack.Protected>
       <Stack.Protected guard={state.status === "ready"}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="time-off-new" options={{ presentation: "modal" }} />
       </Stack.Protected>
     </Stack>
   );

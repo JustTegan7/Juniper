@@ -148,3 +148,94 @@ describe("errorMessage", () => {
     expect(errorMessage(new Error("TypeError: undefined is not a function"))).toBe("Something went wrong. Try again.");
   });
 });
+
+describe("clock writes", () => {
+  const clock = { clockedIn: true, entry: { id: "e1", clockIn: "2026-11-09T17:00:00.000Z" }, breaks: [], openBreak: null };
+
+  it("posts clock in, clock out and end break with an empty JSON body", async () => {
+    const { api, calls } = setup(() => json({ data: { message: "Clocked in.", clock } }));
+    await api.clockIn();
+    await api.clockOut();
+    await api.endBreak();
+    expect(calls.map((c) => [c.init.method, c.url])).toEqual([
+      ["POST", "https://api.example.test/api/v1/clock/in"],
+      ["POST", "https://api.example.test/api/v1/clock/out"],
+      ["POST", "https://api.example.test/api/v1/clock/breaks/end"],
+    ]);
+    for (const c of calls) {
+      expect(headersOf(c)["Content-Type"]).toBe("application/json");
+      expect(JSON.parse(String(c.init.body))).toEqual({});
+    }
+  });
+
+  it("returns the message and the new clock status", async () => {
+    const { api } = setup(() => json({ data: { message: "Clocked in.", clock } }));
+    await expect(api.clockIn()).resolves.toEqual({ message: "Clocked in.", clock });
+  });
+
+  it("sends the break kind", async () => {
+    const { api, calls } = setup(() => json({ data: { message: "Break started.", clock } }));
+    await api.startBreak("meal");
+    await api.startBreak("rest");
+    expect(calls[0].url).toBe("https://api.example.test/api/v1/clock/breaks/start");
+    expect(JSON.parse(String(calls[0].init.body))).toEqual({ kind: "meal" });
+    expect(JSON.parse(String(calls[1].init.body))).toEqual({ kind: "rest" });
+  });
+
+  it("keeps the server's message and code for a rule break", async () => {
+    const { api } = setup(() => json({ error: { code: "invalid", message: "You are already clocked in." } }, 400));
+    await expect(api.clockIn()).rejects.toMatchObject({ status: 400, code: "invalid", message: "You are already clocked in." });
+  });
+
+  it("signs out on 401 for a clock write", async () => {
+    const { api, onUnauthorized } = setup(() => new Response(null, { status: 401 }));
+    await expect(api.clockOut()).rejects.toMatchObject({ code: "unauthorized" });
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("time off writes", () => {
+  it("posts a request with the input as the body and returns the id", async () => {
+    const { api, calls } = setup(() => json({ data: { message: "Request sent for approval.", id: "t1" } }, 201));
+    const input = { startDay: "2026-11-10", endDay: "2026-11-12", allDay: false, startTime: "09:00", endTime: "13:30", reason: "Dentist" };
+    await expect(api.requestTimeOff(input)).resolves.toEqual({ message: "Request sent for approval.", id: "t1" });
+    expect(calls[0].init.method).toBe("POST");
+    expect(calls[0].url).toBe("https://api.example.test/api/v1/time-off");
+    expect(headersOf(calls[0])["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(String(calls[0].init.body))).toEqual(input);
+  });
+
+  it("sends the decision and the note when there is one", async () => {
+    const { api, calls } = setup(() => json({ data: { message: "Approved." } }));
+    await api.reviewTimeOff("t/1", "approved", "Enjoy the trip");
+    expect(calls[0].url).toBe("https://api.example.test/api/v1/time-off/t%2F1/review");
+    expect(calls[0].init.method).toBe("POST");
+    expect(JSON.parse(String(calls[0].init.body))).toEqual({ decision: "approved", note: "Enjoy the trip" });
+  });
+
+  it("leaves the note out when it is empty", async () => {
+    const { api, calls } = setup(() => json({ data: { message: "Denied." } }));
+    await api.reviewTimeOff("t1", "denied");
+    await api.reviewTimeOff("t1", "denied", "");
+    expect(JSON.parse(String(calls[0].init.body))).toEqual({ decision: "denied" });
+    expect(JSON.parse(String(calls[1].init.body))).toEqual({ decision: "denied" });
+  });
+
+  it("posts a cancel with an empty JSON body", async () => {
+    const { api, calls } = setup(() => json({ data: { message: "Time off cancelled." } }));
+    await api.cancelTimeOff("t1");
+    expect(calls[0].url).toBe("https://api.example.test/api/v1/time-off/t1/cancel");
+    expect(calls[0].init.method).toBe("POST");
+    expect(headersOf(calls[0])["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(String(calls[0].init.body))).toEqual({});
+  });
+
+  it("shows the server's message for a forbidden review and signs out on 401", async () => {
+    const forbidden = setup(() => json({ error: { code: "forbidden", message: "Someone else needs to review your own request." } }, 403));
+    await expect(forbidden.api.reviewTimeOff("t1", "approved")).rejects.toMatchObject({ status: 403, message: "Someone else needs to review your own request." });
+    expect(forbidden.onUnauthorized).not.toHaveBeenCalled();
+    const expired = setup(() => new Response(null, { status: 401 }));
+    await expect(expired.api.cancelTimeOff("t1")).rejects.toMatchObject({ code: "unauthorized" });
+    expect(expired.onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+});

@@ -68,9 +68,11 @@ export interface TodayResponse {
   appointments: Appointment[];
 }
 
+export type BreakKind = "meal" | "rest";
+
 export interface ClockBreak {
   id: string;
-  kind: "meal" | "rest";
+  kind: BreakKind;
   startsAt: string;
   endsAt: string | null;
 }
@@ -107,4 +109,27 @@ export interface TimeOffResponse {
 
 export interface MessageResponse {
   message: string;
+}
+
+/** Clock writes return the new status, so the screen can update without another request. */
+export interface ClockActionResponse {
+  message: string;
+  clock: ClockStatus;
+}
+
+export type TimeOffDecision = "approved" | "denied";
+
+/** Body of POST /time-off. Days are YYYY-MM-DD, times are HH:MM in the business time zone. */
+export interface TimeOffInput {
+  startDay: string;
+  endDay: string;
+  allDay: boolean;
+  startTime?: string;
+  endTime?: string;
+  reason?: string;
+}
+
+export interface CreateTimeOffResponse {
+  message: string;
+  id: string;
 }

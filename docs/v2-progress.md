@@ -68,5 +68,30 @@ Root `typecheck`, `test`, `lint` and `build`; `expo export --platform android` (
 - Tab icons, offline support, push notifications, store builds (EAS) are later.
 - `/api/v1` has no response types shared with the web; the phone types in `lib/types.ts` are written by hand from the contract above. If a route changes, update them.
 
-## Sprint 3: Clock and Time off screens with actions - next
+## Sprint 3: Clock and Time off screens with actions (2026-11-04) - done
 
+Branch `v2/clock-timeoff`. Decisions are in `docs/decisions.md` under "Juniper v2, Sprint 3".
+
+### Built
+- Clock tab: Clock in, Clock out (asks first), Start meal break, Start rest break (only when `trackRestBreaks`), End break. Time clocked in, a live timer that ticks only while the tab is focused and someone is clocked in, the open break with its own timer, and today's breaks with their lengths. Updates from the `{ message, clock }` answer, short confirmation banner, buttons disabled while a request runs, 400 or 409 shows the message and refetches `/clock`.
+- Time off tab: Open and Past, pull to refresh, status pills, names for owners and managers. Cancel (own pending or upcoming approved, with a confirm). Approve and Deny for owners and managers on pending requests with an optional note (no buttons on a manager's own request).
+- Request time off modal (`app/time-off-new.tsx`): first day, last day, all day switch, start and end time, optional reason, system date and time pickers. Server messages for everything but "last day before first day".
+- API client: `clockIn`, `clockOut`, `startBreak(kind)`, `endBreak`, `requestTimeOff(input)`, `reviewTimeOff(id, decision, note?)`, `cancelTimeOff(id)`. New types `ClockActionResponse`, `CreateTimeOffResponse`, `TimeOffInput`, `BreakKind`, `TimeOffDecision`.
+- Polish: `useLoad` no longer fetches twice on first open (see decisions); tab icons (Ionicons); shared `Input` and `NoticeBanner` components.
+- Tests: 64 in `apps/mobile/lib` (was 28): API paths, methods and bodies for every new call, 401 sign out on writes, timer and break formatting, clock button rules, review and cancel rules, picker round trips, request body building, refresh bus.
+
+### How it was checked
+Root `typecheck`, `test` (mobile 64, web 51, core 30) and `lint` pass; `expo export --platform android` bundles. Not run here: root `build` (next/font cannot download Google Fonts without internet; `apps/web` is unchanged) and `npx expo-doctor` (18 of 20 checks pass; the Expo config schema check and the React Native Directory check need Expo's servers). `npx expo install` also needed those servers, so the two new packages were added with npm at the SDK 58 versions.
+
+### Manual check (still open, needs a phone or simulator)
+Sign in, clock in, start and end a meal break, clock out. Request time off as a team member, cancel it, request again. As an owner or manager, approve and deny a request, and confirm a manager cannot review their own. Check light and dark mode. Check the date and time pickers on both iOS and Android.
+
+### Not in Sprint 3
+- Not tried on a real phone or simulator yet.
+- A manager entering time off for someone else (the API accepts `membershipId`; the app only requests for yourself).
+- Managers cancelling other people's requests, and changing an approved request from the app (Deny on an approved request is possible on the server, not offered here).
+- Timesheet view, editing clock entries, offline support, push notifications, store builds.
+
+## Sprint 4: push notifications - next
+
+Push for new bookings and time off decisions (Expo push service). Prompt for it is in the Sprint 3 PR.
