@@ -21,7 +21,11 @@ Booking page and embed, staff calendar, clients, services with processing time, 
 - Deposits or a card on file for no-show protection (needs payments, see v4)
 
 ## v2: phone app
-Expo app for staff: today's schedule, clock in and out, time off, push notifications for new bookings and approvals. `/api/v1` route handlers over the same services.
+Expo app for owners and staff only: today's schedule, appointment status, clock in and out, breaks, time off, push notifications for new bookings and approvals. `/api/v1` route handlers over the same services. No client booking in the app; clients book through the website or the embed. Progress: `docs/v2-progress.md`.
+
+- [x] Sprint 1: `/api/v1` API layer and mobile login (Better Auth Expo + bearer token)
+- [ ] Sprint 2: Expo app shell (sign in, business switcher, Today, tabs, brand tokens)
+- [ ] Later sprints: clock and breaks screens, time off screens, push notifications, store builds
 
 ## v3: storefront
 Online shop for retail products, tied to the Evergreen storefront template. Replaces Barclay's current shop provider.

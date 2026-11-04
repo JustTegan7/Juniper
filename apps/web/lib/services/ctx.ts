@@ -41,6 +41,9 @@ export interface Ctx {
 
 export class ForbiddenError extends Error {}
 
+/** A record that does not exist in this business (or was deleted). Same message to the user as before; lets the API answer 404. */
+export class NotFoundError extends Error {}
+
 export const getSession = cache(async () => {
   const h = await headers();
   return auth().api.getSession({ headers: h });
@@ -60,11 +63,20 @@ export function toWorkspace(ws: typeof workspaces.$inferSelect): CtxWorkspace {
   };
 }
 
-async function loadCtx(): Promise<Ctx | "no-workspace" | null> {
-  const session = await getSession();
-  if (!session) return null;
-  const u = session.user;
+export interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+}
 
+/**
+ * Builds ctx for a signed-in person. The one place that decides which business is active,
+ * shared by the web app (cookie) and the phone API (header).
+ * `wanted` is the business the caller asked for. When `strict` is false (web), an unknown or
+ * stale id falls back to the first business. When `strict` is true (API), asking for a business
+ * this person is not on returns "not-a-member" instead.
+ */
+export async function ctxForUser(u: SessionUser, wanted: string | null | undefined, opts: { strict?: boolean } = {}): Promise<Ctx | "no-workspace" | "not-a-member"> {
   const rows = await db()
     .select({ m: memberships, ws: workspaces, tz: user.timezone })
     .from(memberships)
@@ -74,8 +86,9 @@ async function loadCtx(): Promise<Ctx | "no-workspace" | null> {
     .orderBy(asc(memberships.createdAt));
   if (!rows.length) return "no-workspace";
 
-  const wanted = (await cookies()).get(ACTIVE_WORKSPACE_COOKIE)?.value;
-  const active = rows.find((r) => r.ws.id === wanted) ?? rows[0];
+  const match = wanted ? rows.find((r) => r.ws.id === wanted) : undefined;
+  if (wanted && !match && opts.strict) return "not-a-member";
+  const active = match ?? rows[0];
   const ws = toWorkspace(active.ws);
   const tz = active.tz ?? ws.timezone;
 
@@ -91,6 +104,14 @@ async function loadCtx(): Promise<Ctx | "no-workspace" | null> {
     timezone: ws.timezone,
     isPlatformAdmin: isPlatformAdmin(u.email),
   };
+}
+
+async function loadCtx(): Promise<Ctx | "no-workspace" | null> {
+  const session = await getSession();
+  if (!session) return null;
+  const wanted = (await cookies()).get(ACTIVE_WORKSPACE_COOKIE)?.value;
+  const ctx = await ctxForUser(session.user, wanted);
+  return ctx === "not-a-member" ? null : ctx;
 }
 
 /** The signed-in team member, or a redirect (to /login, or /welcome when they are not on a team). Cached per request. */

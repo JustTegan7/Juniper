@@ -6,7 +6,7 @@ import { addDays, HOLDING_STATUSES, isManager, parseHm, ymd, zonedToUtc } from "
 import { db } from "../db";
 import { auditRow } from "../audit";
 import { sendEmail } from "../email";
-import { actorOf, canManageStaff, ForbiddenError, requireManager, type Ctx } from "./ctx";
+import { actorOf, canManageStaff, ForbiddenError, NotFoundError, requireManager, type Ctx } from "./ctx";
 import { loadMembers } from "./workspace";
 
 export type TimeOffRow = typeof timeOff.$inferSelect & { name: string; color: string };
@@ -111,7 +111,7 @@ export async function reviewTimeOff(ctx: Ctx, raw: unknown) {
   requireManager(ctx);
   const { id, decision, note } = reviewInput.parse(raw);
   const [row] = await db().select().from(timeOff).where(and(eq(timeOff.id, id), eq(timeOff.workspaceId, ctx.workspace.id), isNull(timeOff.deletedAt)));
-  if (!row) throw new Error("That request was not found.");
+  if (!row) throw new NotFoundError("That request was not found.");
   if (row.membershipId === ctx.membershipId && ctx.role !== "owner") throw new ForbiddenError("Someone else needs to review your own request.");
   if (row.status !== "pending" && row.status !== "approved") throw new Error("That request was already closed.");
   const d = db();
@@ -139,7 +139,7 @@ export async function reviewTimeOff(ctx: Ctx, raw: unknown) {
 export async function cancelTimeOff(ctx: Ctx, raw: unknown) {
   const { id } = z.object({ id: z.uuid() }).parse(raw);
   const [row] = await db().select().from(timeOff).where(and(eq(timeOff.id, id), eq(timeOff.workspaceId, ctx.workspace.id), isNull(timeOff.deletedAt)));
-  if (!row) throw new Error("That request was not found.");
+  if (!row) throw new NotFoundError("That request was not found.");
   if (!canManageStaff(ctx, row.membershipId)) throw new ForbiddenError("You can only cancel your own requests.");
   if (!isManager(ctx.role) && row.status === "approved" && row.startsAt < new Date()) throw new Error("Time off that already started can only be changed by a manager.");
   const d = db();

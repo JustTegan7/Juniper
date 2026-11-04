@@ -76,6 +76,21 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - **Status colors.** Confirmed, pending and cancelled have their own tokens, so booking and shift states do not borrow brand colors.
 - **Per-business color.** Each business keeps its own `brand_color` on its booking pages, with the footer "Powered by Juniper". The database default for new businesses is still the old berry; changing it needs a migration.
 
+## Juniper v2, Sprint 1: API layer and mobile login (2026-11-04)
+
+- **The phone app is for owners and staff only.** No client booking in the app. Clients book through the website, the booking page or the embed. The API has no public or client endpoints.
+- **`/api/v1` route handlers are thin wrappers over `lib/services`.** Each handler resolves ctx, calls one service and shapes JSON. No business rules in routes. Shared plumbing is `lib/api.ts` (`apiCtx`, `jsonBody`, `respond`, error mapping, `mePayload`, `clockPayload`).
+- **One ctx resolver for web and phone.** `ctxForUser(user, wanted, { strict })` in `lib/services/ctx.ts` is the only code that picks the active business. The web passes the `jo_ws` cookie and falls back to the first business when it is stale (unchanged behavior). The API passes the `x-juniper-workspace` header with `strict: true`, so asking for a business you are not on is a 403, never a silent fallback. No header means the first business, same as the web.
+- **Switching business on the phone is stateless.** `POST /api/v1/me/workspace` checks the membership and returns `me` for that business; the phone keeps the id and sends it in the header. No server state, no cookie.
+- **Mobile login uses Better Auth's `expo()` plus `bearer({ requireSignature: true })`.** Staff sign in with the same email and password endpoint (`/api/auth/sign-in/email`). The response carries the signed session token in `set-auth-token`; the phone stores it in SecureStore (through `expoClient` from `@better-auth/expo/client`) and sends `Authorization: Bearer <token>` to `/api/v1`. Only signed tokens are accepted. Sessions, expiry and sign-out are the normal Better Auth sessions, so signing out or a password reset ends the phone session too. Web cookies are unchanged.
+- **`juniper://` is a trusted origin.** Dev builds (`exp://...`) go in `EXTRA_TRUSTED_ORIGINS`, never in code.
+- **`/api/v1/` skips the cookie gate in `proxy.ts`.** The phone sends a bearer token, not a cookie. Every handler checks the real session through `apiCtx`, so nothing is open.
+- **Errors are JSON with real status codes.** Success is `{ data }`; failure is `{ error: { code, message } }`. 401 `unauthorized`, 403 `no_workspace` or `forbidden` (`ForbiddenError`), 404 `not_found` (new `NotFoundError`, same message the web shows), 409 `conflict`, 400 `invalid` (zod errors and the plain `Error` messages services already throw for people), 415 for writes that are not JSON, 500 `server_error` with a generic message for anything else (database and driver errors are never echoed). All responses are `Cache-Control: no-store`.
+- **Writes require `Content-Type: application/json`.** A browser cannot send that cross-site without a CORS preflight, which the API does not answer, so session cookies cannot be used for cross-site writes.
+- **`NotFoundError` replaces plain `Error` for "not found" in appointments and time off.** Same message, so the web is unchanged; the API can answer 404 for another business's records instead of 400.
+- **Today's appointments use `loadCalendarDay` for `ctx.today`** in the business time zone. `?scope=mine` (default) is the person's own column; `?scope=all` is the whole calendar, which members can already see on the web.
+- **Tests run the route handlers against PGlite with the real migrations** and a fake session (`Bearer <user id>`), covering auth failures, wrong business access and owner, manager and member rules. A separate test checks the real auth config has the phone plugins.
+
 ## Not decided yet
 
 - Offline sync engine for the phone (build simple "changes since" sync first).
