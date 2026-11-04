@@ -9,7 +9,7 @@ import { formObject } from "../../../lib/form";
 
 type C = { id: string; firstName: string; lastName: string; email: string | null; phone: string; notes: string | null };
 
-export function ClientForm({ label, client }: { label: string; client?: C }) {
+export function ClientForm({ label, client, onDelete }: { label: string; client?: C; onDelete?: () => void }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const { act, pending } = useAct();
@@ -37,7 +37,23 @@ export function ClientForm({ label, client }: { label: string; client?: C }) {
             <label className="block"><span className="label">Email</span><input name="email" type="email" className="input" defaultValue={client?.email ?? ""} /></label>
           </div>
           <label className="block"><span className="label">Notes (formulas, preferences)</span><textarea name="notes" rows={4} className="input" defaultValue={client?.notes ?? ""} /></label>
-          <div className="flex justify-end"><button className="btn btn-primary" disabled={pending}>Save</button></div>
+          <div className="flex items-center justify-between gap-2">
+            {client && onDelete ? (
+              <button
+                type="button"
+                className="btn btn-danger btn-sm"
+                onClick={() => {
+                  setOpen(false);
+                  onDelete();
+                }}
+              >
+                Delete
+              </button>
+            ) : (
+              <span />
+            )}
+            <button className="btn btn-primary" disabled={pending}>Save</button>
+          </div>
         </form>
       </Dialog>
     </>

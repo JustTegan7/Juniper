@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatDay, formatPrice, formatTimeIn, STATUS_LABELS, utcToZoned } from "@evergreen/core";
+import { formatDay, formatPrice, isManager, formatTimeIn, STATUS_LABELS, utcToZoned } from "@evergreen/core";
 import { getCtx } from "../../../../lib/services/ctx";
-import { clientName, formatPhone, getClient } from "../../../../lib/services/clients";
-import { ClientForm } from "../ClientForm";
+import { clientName, formatPhone, getClient, getClientDeleteSummary } from "../../../../lib/services/clients";
+import { ClientActions } from "../ClientActions";
 
 export const metadata: Metadata = { title: "Client" };
 
@@ -38,6 +38,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   const upcoming = history.filter((h) => h.startsAt.getTime() >= now && ["booked", "confirmed", "checked_in"].includes(h.status)).reverse();
   const past = history.filter((h) => !upcoming.includes(h));
   const spent = history.filter((h) => h.status === "completed").reduce((n, h) => n + h.priceCents, 0);
+  const canDelete = isManager(ctx.role);
+  const summary = canDelete ? await getClientDeleteSummary(ctx, { id: c.id }, new Date(now)) : null;
   const visits = history.filter((h) => h.status === "completed").length;
 
 
@@ -55,7 +57,13 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
           <p className="mt-1 text-sm text-muted">{visits} completed visit{visits === 1 ? "" : "s"} · {formatPrice(spent)} total</p>
         </div>
         <div className="flex gap-2">
-          <ClientForm label="Edit" client={{ id: c.id, firstName: c.firstName, lastName: c.lastName, email: c.email, phone: formatPhone(c.phone), notes: c.notes }} />
+          <ClientActions
+            client={{ id: c.id, firstName: c.firstName, lastName: c.lastName, email: c.email, phone: formatPhone(c.phone), notes: c.notes }}
+            name={clientName(c)}
+            clientWord={ctx.workspace.vocab.client}
+            canDelete={canDelete}
+            summary={summary}
+          />
           <Link href="/calendar?book=1" className="btn btn-primary btn-sm">Book</Link>
         </div>
       </div>
