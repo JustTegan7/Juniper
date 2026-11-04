@@ -1,7 +1,9 @@
 node_modules
 .next
-out
-build
+/out
+/apps/web/out
+/build
+/apps/web/build
 coverage
 .env*
 !.env.example
