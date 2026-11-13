@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "stock_movements_order_product_reason" ON "stock_movements" USING btree ("order_id","product_id","reason") WHERE order_id is not null;

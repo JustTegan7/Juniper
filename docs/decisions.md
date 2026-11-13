@@ -149,3 +149,12 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - Push provider details (Expo push service is the default plan).
 - Per-business custom domains.
 - Payments provider for deposits, storefront and POS.
+
+## Storefront and Helcim payments (2026-11-13)
+- Juniper owns products, stock and orders. Helcim is card payments and hardware only. Spec in `docs/storefront-spec.md`.
+- Stock is an append only ledger (`stock_movements`). A unique index on order, product and reason means a replayed webhook cannot take stock out twice.
+- Stock comes out only when Helcim confirms an approved payment and the amount and order state agree. Anything odd sets `payments.needs_review` and changes nothing else.
+- Webhooks are verified, deduped on `webhook-id`, then the transaction is fetched from Helcim by id. The webhook body is never trusted. A failure returns 500 so Helcim retries, and every step is safe to run twice.
+- One Helcim webhook URL per connected account (`/api/webhooks/helcim/<connectionKey>`) because verifier tokens are per account. Tokens are stored AES-256-GCM encrypted with `HELCIM_ENCRYPTION_KEY`.
+- Only one pending payment per device, enforced by a partial unique index, because Helcim does not queue requests to a device.
+- Preview deploys get their own Neon branch. The free plan allows 10 branches, so delete old `preview/*` branches when a preview fails at "Provisioning Integrations".
