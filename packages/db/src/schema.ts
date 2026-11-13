@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { uuidv7 } from "uuidv7";
 
 // Core tables every app needs. Each app adds its own tables below and scopes
@@ -426,4 +427,180 @@ export const pushTokens = pgTable(
     ...stamps,
   },
   (t) => [uniqueIndex("push_tokens_token").on(t.token), index("push_tokens_member").on(t.workspaceId, t.membershipId)],
+);
+
+// ---------- Storefront, inventory and Helcim payments ----------
+// See docs/storefront-spec.md. Money is whole cents. Stock is a ledger: on hand is the sum of stock_movements.delta.
+
+export const orderChannel = pgEnum("order_channel", ["in_person", "online"]);
+export const orderStatus = pgEnum("order_status", ["draft", "awaiting_payment", "paid", "fulfilled", "cancelled", "refunded"]);
+export const fulfillmentKind = pgEnum("fulfillment_kind", ["counter", "pickup", "ship"]);
+export const paymentStatus = pgEnum("payment_status", ["pending", "approved", "declined", "cancelled", "timed_out", "refunded"]);
+export const stockReason = pgEnum("stock_reason", ["receive", "sale", "online_sale", "adjust", "return", "void"]);
+export const helcimDeviceKind = pgEnum("helcim_device_kind", ["smart_terminal", "card_reader"]);
+
+/** A flat SKU (no variants). Stock is not a column here, see stockMovements. */
+export const products = pgTable(
+  "products",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    sku: text("sku").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    priceCents: integer("price_cents").notNull(),
+    active: boolean("active").notNull().default(true),
+    shippingAllowed: boolean("shipping_allowed").notNull().default(true),
+    pickupAllowed: boolean("pickup_allowed").notNull().default(true),
+    /** Image URLs, first one is the main photo. */
+    images: jsonb("images").notNull().default([]),
+    sortOrder: integer("sort_order").notNull().default(0),
+    ...stamps,
+  },
+  (t) => [uniqueIndex("products_ws_sku").on(t.workspaceId, t.sku), index("products_ws_active").on(t.workspaceId, t.active)],
+);
+
+/** Append only. Fix a mistake with a new row, never by editing or deleting one. */
+export const stockMovements = pgTable(
+  "stock_movements",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "restrict" }),
+    delta: integer("delta").notNull(),
+    reason: stockReason("reason").notNull(),
+    orderId: uuid("order_id"),
+    note: text("note"),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("stock_movements_product").on(t.workspaceId, t.productId), index("stock_movements_order").on(t.orderId)],
+);
+
+/** Hands out the next human order number for a business. Used as the Helcim invoiceNumber. */
+export const orderCounters = pgTable("order_counters", {
+  workspaceId: uuid("workspace_id").primaryKey().references(() => workspaces.id, { onDelete: "cascade" }),
+  next: integer("next").notNull().default(1),
+});
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    orderNumber: integer("order_number").notNull(),
+    channel: orderChannel("channel").notNull(),
+    status: orderStatus("status").notNull().default("draft"),
+    fulfillment: fulfillmentKind("fulfillment").notNull().default("counter"),
+    subtotalCents: integer("subtotal_cents").notNull().default(0),
+    taxCents: integer("tax_cents").notNull().default(0),
+    shippingCents: integer("shipping_cents").notNull().default(0),
+    totalCents: integer("total_cents").notNull().default(0),
+    customerName: text("customer_name"),
+    customerEmail: text("customer_email"),
+    /** Shipping address for ship orders. */
+    shipTo: jsonb("ship_to"),
+    createdByMembershipId: uuid("created_by_membership_id").references(() => memberships.id, { onDelete: "set null" }),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    ...stamps,
+  },
+  (t) => [uniqueIndex("orders_ws_number").on(t.workspaceId, t.orderNumber), index("orders_ws_status").on(t.workspaceId, t.status)],
+);
+
+/** Name, SKU and price are copied at sale time so later product edits never change a past order. */
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "restrict" }),
+    sku: text("sku").notNull(),
+    name: text("name").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    quantity: integer("quantity").notNull(),
+    ...stamps,
+  },
+  (t) => [index("order_items_order").on(t.orderId)],
+);
+
+/** Per business Helcim account link. Tokens are stored encrypted. The partner token is a deploy setting, not stored here. */
+export const helcimConnections = pgTable(
+  "helcim_connections",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    /** Random URL-safe key used in the webhook path so each Helcim account gets its own verifier token. */
+    connectionKey: text("connection_key").notNull(),
+    apiTokenEnc: text("api_token_enc").notNull(),
+    verifierTokenEnc: text("verifier_token_enc"),
+    currency: text("currency").notNull().default("USD"),
+    ...stamps,
+  },
+  (t) => [uniqueIndex("helcim_connections_ws").on(t.workspaceId), uniqueIndex("helcim_connections_key").on(t.connectionKey)],
+);
+
+export const helcimDevices = pgTable(
+  "helcim_devices",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    connectionId: uuid("connection_id").notNull().references(() => helcimConnections.id, { onDelete: "cascade" }),
+    /** The 4 character device code shown on the device after registering. */
+    code: text("code").notNull(),
+    kind: helcimDeviceKind("kind").notNull(),
+    label: text("label").notNull(),
+    location: text("location"),
+    active: boolean("active").notNull().default(true),
+    lastPingAt: timestamp("last_ping_at", { withTimezone: true }),
+    ...stamps,
+  },
+  (t) => [uniqueIndex("helcim_devices_conn_code").on(t.connectionId, t.code)],
+);
+
+export const payments = pgTable(
+  "payments",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    channel: orderChannel("channel").notNull(),
+    status: paymentStatus("status").notNull().default("pending"),
+    amountCents: integer("amount_cents").notNull(),
+    deviceId: uuid("device_id").references(() => helcimDevices.id, { onDelete: "set null" }),
+    /** 25 character key sent as the Helcim idempotency-key header. */
+    idempotencyKey: text("idempotency_key").notNull(),
+    /** Set when Helcim reports the transaction. Unique so a replayed webhook cannot pay twice. */
+    helcimTransactionId: text("helcim_transaction_id"),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    /** Set when the match used the fallback (device and amount) instead of the invoice number. */
+    needsReview: boolean("needs_review").notNull().default(false),
+    raw: jsonb("raw"),
+    ...stamps,
+  },
+  (t) => [
+    uniqueIndex("payments_idem").on(t.idempotencyKey),
+    uniqueIndex("payments_txn").on(t.helcimTransactionId),
+    index("payments_order").on(t.orderId),
+    index("payments_ws_status").on(t.workspaceId, t.status),
+    // One pending payment per device at a time. Helcim has no queue for a device.
+    uniqueIndex("payments_one_pending_per_device").on(t.deviceId).where(sql`status = 'pending' and device_id is not null`),
+  ],
+);
+
+/** Every webhook delivery, deduped on Helcim's webhook-id. */
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
+    webhookId: text("webhook_id").notNull(),
+    type: text("type").notNull(),
+    helcimId: text("helcim_id"),
+    result: text("result"),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("webhook_events_webhook_id").on(t.webhookId)],
 );
