@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { Vocabulary, WeeklyHours, WorkspaceSettings } from "@evergreen/core";
-import { saveBusinessHoursAction, updateBusinessAction, updateSettingsAction } from "../actions";
+import type { HelcimSettings } from "../../../lib/services/helcim-connection";
+import { saveBusinessHoursAction, saveHelcimConnectionAction, saveHelcimDeviceAction, updateBusinessAction, updateSettingsAction } from "../actions";
 import { useAct } from "../../../components/app/useAct";
 import { WeekHoursEditor } from "../../../components/app/WeekHoursEditor";
 import { formObject } from "../../../lib/form";
@@ -206,5 +207,73 @@ export function EmbedSnippet({ bookingUrl, embedUrl, scriptUrl, slug }: { bookin
         <p className="mt-1 text-xs text-muted">Paste it where the booking form should appear. It resizes itself and works on phones. Evergreen sites have this built in.</p>
       </div>
     </div>
+  );
+}
+
+export function HelcimForm({ initial, webhookBase }: { initial: HelcimSettings; webhookBase: string }) {
+  const { act, pending } = useAct();
+  const [copied, setCopied] = useState(false);
+  const webhookUrl = initial.connectionKey ? `${webhookBase}/${initial.connectionKey}` : null;
+  return (
+    <div className="space-y-6 text-sm">
+      <form className="grid gap-3 sm:grid-cols-2" action={(f) => act(() => saveHelcimConnectionAction(formObject(f)))}>
+        <label className="block">
+          <span className="label">API token</span>
+          <input name="apiToken" type="password" autoComplete="off" className="input" placeholder={initial.connected ? "Saved. Paste a new one to replace it." : "From Helcim, All Tools, Integrations, API Access"} required={!initial.connected} />
+        </label>
+        <label className="block">
+          <span className="label">Webhook verifier token</span>
+          <input name="verifierToken" type="password" autoComplete="off" className="input" placeholder={initial.hasVerifierToken ? "Saved. Paste a new one to replace it." : "Shown by Helcim when you add the webhook URL"} />
+        </label>
+        <label className="block">
+          <span className="label">Currency</span>
+          <select name="currency" className="input" defaultValue={initial.currency}>
+            <option value="USD">USD</option>
+            <option value="CAD">CAD</option>
+          </select>
+        </label>
+        <div className="flex items-end"><button className="btn btn-primary btn-sm" disabled={pending}>{initial.connected ? "Save" : "Connect"}</button></div>
+      </form>
+
+      {webhookUrl && (
+        <div>
+          <span className="label">Webhook URL</span>
+          <div className="flex gap-2">
+            <input className="input" readOnly value={webhookUrl} aria-label="Webhook URL" />
+            <button type="button" className="btn btn-soft btn-sm" onClick={() => { navigator.clipboard?.writeText(webhookUrl); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "Copied" : "Copy"}</button>
+          </div>
+          <p className="mt-1 text-xs text-muted">In Helcim, add this as the webhook URL and turn on Card Transaction and Terminal Cancel events. Helcim then shows a verifier token to paste above. Until that token is saved, payment results are rejected.</p>
+        </div>
+      )}
+
+      {initial.connected && (
+        <div className="space-y-3">
+          <h3 className="font-semibold">Devices</h3>
+          {initial.devices.length === 0 && <p className="text-muted">No devices yet. Register a device in Helcim, then add the 4 character code it shows.</p>}
+          {initial.devices.map((d) => <DeviceRow key={d.id} device={d} />)}
+          <DeviceRow />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DeviceRow({ device }: { device?: HelcimSettings["devices"][number] }) {
+  const { act, pending } = useAct();
+  return (
+    <form className="grid items-end gap-2 sm:grid-cols-[6rem_9rem_1fr_1fr_auto_auto]" action={(f) => act(() => saveHelcimDeviceAction({ ...formObject(f), id: device?.id, active: f.get("active") === "on" }))}>
+      <label className="block"><span className="label">Code</span><input name="code" className="input uppercase" maxLength={4} defaultValue={device?.code} required /></label>
+      <label className="block">
+        <span className="label">Type</span>
+        <select name="kind" className="input" defaultValue={device?.kind ?? "smart_terminal"}>
+          <option value="smart_terminal">Smart Terminal</option>
+          <option value="card_reader">Card Reader</option>
+        </select>
+      </label>
+      <label className="block"><span className="label">Name</span><input name="label" className="input" placeholder="Front counter" defaultValue={device?.label} required /></label>
+      <label className="block"><span className="label">Location</span><input name="location" className="input" defaultValue={device?.location ?? ""} /></label>
+      <label className="flex items-center gap-2 pb-2"><input name="active" type="checkbox" defaultChecked={device?.active ?? true} /><span>On</span></label>
+      <button className="btn btn-soft btn-sm" disabled={pending}>{device ? "Save" : "Add device"}</button>
+    </form>
   );
 }

@@ -7,6 +7,7 @@ import { ACTIVE_WORKSPACE_COOKIE, getCtx, requireManager, type Ctx } from "../..
 import * as appts from "../../lib/services/appointments";
 import * as catalog from "../../lib/services/catalog";
 import * as clients from "../../lib/services/clients";
+import * as helcim from "../../lib/services/helcim-connection";
 import * as hours from "../../lib/services/hours";
 import * as settings from "../../lib/services/settings";
 import * as team from "../../lib/services/team";
@@ -33,6 +34,10 @@ export const archiveServiceAction = async (input: unknown) => run((c) => catalog
 export const saveCategoryAction = async (input: unknown) => run((c) => catalog.saveCategory(c, input));
 export const deleteCategoryAction = async (input: unknown) => run((c) => catalog.deleteCategory(c, input));
 export const saveStaffOverrideAction = async (input: unknown) => run((c) => catalog.saveStaffOverride(c, input));
+
+// Card payments (Helcim)
+export const saveHelcimConnectionAction = async (input: unknown) => run((c) => helcim.saveHelcimConnection(c, input));
+export const saveHelcimDeviceAction = async (input: unknown) => run((c) => helcim.saveHelcimDevice(c, input));
 
 // Hours
 export const saveBusinessHoursAction = async (input: unknown) => run((c) => hours.saveBusinessHours(c, input));

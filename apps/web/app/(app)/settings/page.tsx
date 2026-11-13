@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { isManager } from "@evergreen/core";
 import { getCtx } from "../../../lib/services/ctx";
+import { loadHelcimSettings } from "../../../lib/services/helcim-connection";
 import { loadBusinessHours } from "../../../lib/services/hours";
 import { appUrl } from "../../../lib/platform";
-import { BookingRules, BusinessDetails, BusinessHoursForm, ContactForm, EmbedSnippet, TimeRulesForm, VocabularyForm } from "./SettingsForms";
+import { BookingRules, BusinessDetails, BusinessHoursForm, ContactForm, HelcimForm, EmbedSnippet, TimeRulesForm, VocabularyForm } from "./SettingsForms";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -25,6 +26,7 @@ export default async function SettingsPage() {
   const ws = ctx.workspace;
   const hours = await loadBusinessHours(ws.id);
   const base = appUrl();
+  const helcim = ctx.role === "owner" ? await loadHelcimSettings(ctx) : null;
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Settings</h1>
@@ -46,6 +48,11 @@ export default async function SettingsPage() {
       <Section id="h-time" title="Time clock rules" note={ctx.role === "owner" ? "Defaults follow Washington State: overtime after 40 hours a week, a 30 minute meal break for shifts over 5 hours. Check with your payroll provider before changing them." : "Only an owner can change these."}>
         <TimeRulesForm initial={ws.settings.time} disabled={ctx.role !== "owner"} />
       </Section>
+      {helcim && (
+        <Section id="h-helcim" title="Card payments (Helcim)" note="Connect your Helcim account so the register can take card payments on your Helcim devices and the online shop can take cards. Tokens are stored encrypted and are never shown again.">
+          <HelcimForm initial={helcim} webhookBase={`${base}/api/webhooks/helcim`} />
+        </Section>
+      )}
       <Section id="h-words" title="Words" note="What your business calls things. Leave blank to use the default for your industry.">
         <VocabularyForm initial={ws.vocab} />
       </Section>
