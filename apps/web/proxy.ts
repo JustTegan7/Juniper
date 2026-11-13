@@ -7,7 +7,7 @@ import { getSessionCookie } from "better-auth/cookies";
 const PUBLIC = new Set(["/", "/login", "/reset-password", "/privacy", "/terms", "/robots.txt", "/sitemap.xml", "/join", "/embed.js"]);
 // Client booking pages, the embed, auth endpoints, the cron (which checks its own secret) and the
 // phone API (which sends a bearer token, not a cookie, and checks the session in every handler).
-const PUBLIC_PREFIXES = ["/b/", "/embed/", "/api/auth/", "/api/cron/", "/api/v1/"];
+const PUBLIC_PREFIXES = ["/b/", "/embed/", "/api/auth/", "/api/cron/", "/api/v1/", "/api/webhooks/helcim/"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

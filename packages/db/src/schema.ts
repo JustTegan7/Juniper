@@ -474,7 +474,12 @@ export const stockMovements = pgTable(
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("stock_movements_product").on(t.workspaceId, t.productId), index("stock_movements_order").on(t.orderId)],
+  (t) => [
+    index("stock_movements_product").on(t.workspaceId, t.productId),
+    index("stock_movements_order").on(t.orderId),
+    // One row per order, product and reason, so a replayed webhook can never take stock out twice.
+    uniqueIndex("stock_movements_order_product_reason").on(t.orderId, t.productId, t.reason).where(sql`order_id is not null`),
+  ],
 );
 
 /** Hands out the next human order number for a business. Used as the Helcim invoiceNumber. */

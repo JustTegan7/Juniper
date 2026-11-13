@@ -36,6 +36,13 @@
       "when": 1794610062744,
       "tag": "0004_storefront_helcim",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794613261602,
+      "tag": "0005_stock_sale_unique",
+      "breakpoints": true
     }
   ]
 }
