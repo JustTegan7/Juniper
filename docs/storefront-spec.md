@@ -9,6 +9,7 @@ Status: draft, 2026-11-13. Not built yet. Client: ReLoved Gaming (owns its own H
 - Every sale starts in Juniper. API mode turns off the built-in Helcim POS on every Smart Terminal on the account.
 - Online checkout uses HelcimPay.js. Every Helcim request carries our partner token.
 - Products are flat SKUs, no variants. Fulfillment is shipping or local pickup.
+- v1 runs as a web app on any browser, no desktop app. The register only calls Juniper's server, which calls Helcim. Cash is a tender type in Juniper that records the sale without calling Helcim, and still writes stock.
 - Rules from CLAUDE.md apply: workspace_id on every table, UUIDv7, soft delete, service functions `(ctx, input)` with zod, audit rows for changes that matter, no em dashes.
 
 ## 2. What Helcim's docs say (checked 2026-11-13)
