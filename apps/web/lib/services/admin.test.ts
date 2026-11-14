@@ -30,7 +30,7 @@ vi.mock("../db", () => ({
   },
 }));
 
-const { deleteBusiness, loadBusinessCounts, NotPlatformAdminError } = await import("./admin");
+const { deleteBusiness, loadBusinessCounts, NotPlatformAdminError, setBusinessModules } = await import("./admin");
 const { createBusiness } = await import("./workspace");
 
 const admin = { userId: "u-admin", email: "admin@evergreen.test" };
@@ -137,5 +137,18 @@ describe("deleteBusiness", () => {
     const counts = await loadBusinessCounts(admin);
     expect(counts[a.id]).toMatchObject({ appointments: 1, clients: 1, staff: 1, timeEntries: 1 });
     expect(counts[a.id].services).toBeGreaterThan(0);
+  });
+
+  it("lets only a platform admin change a business's features, and keeps other settings", async () => {
+    const a = await seed("salon-a", { withHistory: false });
+    const all = { workspaceId: a.id, appointments: false, customers: false, timeclock: true, messages: false, shop: true };
+    await expect(setBusinessModules(stranger, all)).rejects.toThrow(NotPlatformAdminError);
+    await testDb.update(workspaces).set({ settings: { shop: { enabled: false, taxRatePercent: 9 } } }).where(eq(workspaces.id, a.id));
+    await setBusinessModules(admin, all);
+    const [w] = await testDb.select().from(workspaces).where(eq(workspaces.id, a.id));
+    const s = w!.settings as { modules: Record<string, boolean>; booking: { enabled: boolean }; shop: { enabled: boolean; taxRatePercent: number } };
+    expect(s.modules).toEqual({ appointments: false, customers: false, timeclock: true, messages: false });
+    expect(s.booking.enabled).toBe(false);
+    expect(s.shop).toMatchObject({ enabled: true, taxRatePercent: 9 });
   });
 });

@@ -104,7 +104,7 @@ export const INDUSTRY_PRESETS: Record<Industry, IndustryPreset> = {
   retail: {
     label: "Retail or online store (no appointments)",
     vocabulary: { ...base, client: "Customer", clientPlural: "Customers" },
-    settings: { booking: { enabled: false }, shop: { enabled: true } },
+    settings: { booking: { enabled: false }, shop: { enabled: true }, modules: { appointments: false, customers: false } },
     noAppointments: true,
     starterServices: [],
   },
@@ -166,6 +166,23 @@ export const workspaceSettingsSchema = z.object({
       payPeriod: z.enum(["weekly", "biweekly", "semimonthly"]).default("biweekly"),
       /** Any first day of a pay period, for weekly and biweekly. */
       payPeriodAnchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).default("2026-01-04"),
+    })
+    .prefault({}),
+  /**
+   * Which parts of Juniper a business sees. Left unset, a business gets its industry's default
+   * (everything for appointment businesses, a store-only set for retail). Evergreen sets these
+   * on the admin page. The Register, Products and Orders follow shop.enabled.
+   */
+  modules: z
+    .object({
+      /** Today, Calendar, Services and online booking. */
+      appointments: z.boolean().optional(),
+      /** The customer list. */
+      customers: z.boolean().optional(),
+      /** Time clock, Timesheets and Time off. */
+      timeclock: z.boolean().optional(),
+      /** Team chat. */
+      messages: z.boolean().optional(),
     })
     .prefault({}),
   /** Register and online shop settings. */
@@ -259,6 +276,43 @@ export function normalizeOrigin(v: string): string | null {
   } catch {
     return null;
   }
+}
+
+export interface Modules {
+  appointments: boolean;
+  customers: boolean;
+  timeclock: boolean;
+  messages: boolean;
+  shop: boolean;
+}
+
+export const MODULE_LABELS: Record<keyof Modules, string> = {
+  appointments: "Appointments (Today, Calendar, Services, online booking)",
+  customers: "Customer list",
+  timeclock: "Employee time (time clock, timesheets, time off)",
+  messages: "Team chat",
+  shop: "Store (Register, Products, Orders, online shop)",
+};
+
+/** What a business actually sees: its own choice, else its industry's default. */
+export function modulesOf(template: string, settings: WorkspaceSettings): Modules {
+  const retail = isRetail(template);
+  return {
+    appointments: settings.modules.appointments ?? !retail,
+    customers: settings.modules.customers ?? !retail,
+    timeclock: settings.modules.timeclock ?? true,
+    messages: settings.modules.messages ?? true,
+    shop: settings.shop.enabled,
+  };
+}
+
+/** The first screen a person lands on, given what is turned on. */
+export function homePath(m: Modules): string {
+  if (m.appointments) return "/today";
+  if (m.shop) return "/register";
+  if (m.timeclock) return "/clock";
+  if (m.messages) return "/messages";
+  return "/more";
 }
 
 /** True for businesses that sell products and do not take appointments. */

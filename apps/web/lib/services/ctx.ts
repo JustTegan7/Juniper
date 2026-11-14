@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { memberships, user, workspaces } from "@evergreen/db";
-import { isManager, parseSettings, todayIn, vocabularyFor, type Role, type Vocabulary, type WorkspaceSettings } from "@evergreen/core";
+import { homePath, isManager, modulesOf, parseSettings, todayIn, vocabularyFor, type Modules, type Role, type Vocabulary, type WorkspaceSettings } from "@evergreen/core";
 import { auth } from "../auth";
 import { db } from "../db";
 import { isPlatformAdmin } from "../platform";
@@ -21,6 +21,8 @@ export interface CtxWorkspace {
   brandColor: string;
   settings: WorkspaceSettings;
   vocab: Vocabulary;
+  /** Which parts of the app this business sees. */
+  modules: Modules;
 }
 
 export interface Ctx {
@@ -60,6 +62,7 @@ export function toWorkspace(ws: typeof workspaces.$inferSelect): CtxWorkspace {
     brandColor: ws.brandColor,
     settings,
     vocab: vocabularyFor(ws.template, settings.vocabulary),
+    modules: modulesOf(ws.template, settings),
   };
 }
 
@@ -137,4 +140,9 @@ export function canManageStaff(ctx: Ctx, membershipId: string) {
 
 export function actorOf(ctx: Ctx): AuditActor {
   return { workspaceId: ctx.workspace.id, userId: ctx.userId, label: ctx.name };
+}
+
+/** Sends the person home when a screen belongs to a part of the app their business does not use. */
+export function requireModule(ctx: Ctx, key: keyof Modules) {
+  if (!ctx.workspace.modules[key]) redirect(homePath(ctx.workspace.modules));
 }

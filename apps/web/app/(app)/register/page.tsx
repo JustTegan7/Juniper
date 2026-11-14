@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { listProducts } from "../../../lib/services/products";
 import { loadHelcimSettingsForRegister } from "../../../lib/services/helcim-connection";
 import { listRecentOrders, reapStalePayments } from "../../../lib/services/orders";
@@ -10,7 +9,7 @@ export const metadata: Metadata = { title: "Register" };
 
 export default async function RegisterPage() {
   const ctx = await getCtx();
-  if (!ctx.workspace.settings.shop.enabled) redirect("/today");
+  requireModule(ctx, "shop");
   await reapStalePayments(ctx.workspace.id);
   const [products, devices, recent] = await Promise.all([listProducts(ctx), loadHelcimSettingsForRegister(ctx), listRecentOrders(ctx, 8)]);
   return (

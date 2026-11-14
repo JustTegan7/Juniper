@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { formatDay, formatTimeIn, isManager } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { listTimeOff, type TimeOffRow } from "../../../lib/services/timeoff";
 import { loadMembers } from "../../../lib/services/workspace";
 import { RequestForm, ReviewButtons, CancelButton } from "./TimeOffForms";
@@ -30,6 +30,7 @@ function Row({ t, tz, manager, actions }: { t: TimeOffRow; tz: string; manager: 
 
 export default async function TimeOffPage() {
   const ctx = await getCtx();
+  requireModule(ctx, "timeclock");
   const tz = ctx.workspace.timezone;
   const manager = isManager(ctx.role);
   const [open, past, members] = await Promise.all([listTimeOff(ctx, { scope: "open" }), listTimeOff(ctx, { scope: "past" }), manager ? loadMembers(ctx.workspace.id) : Promise.resolve([])]);

@@ -167,3 +167,9 @@ Every architecture decision, with the reason. Claude reads this before changing 
 
 ## Retail industry (2026-11-13)
 - New industry `retail` for stores with no appointments (first client: ReLoved Gaming). New businesses start with booking off and the shop on. Today redirects to the Register, and Calendar and Services are hidden. Time clock, team, messages and customers stay.
+
+## Feature switches per business (2026-11-13)
+- `settings.modules` (appointments, customers, timeclock, messages) plus `shop.enabled` decide which screens a business sees. Unset means the industry default: everything for appointment businesses, store-only for retail.
+- Only Evergreen changes them, on the admin page (Features button). Businesses cannot hide or show screens themselves.
+- Hidden screens redirect to the first screen that is on. Nothing is deleted, and turning a part back on restores it. This is a screen switch, not a permission check: services still enforce roles and the shop flag.
+- Turning appointments off also turns online booking off. Turning the store off also turns the online shop off.

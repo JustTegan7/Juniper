@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { loadMembers } from "../../../lib/services/workspace";
 import { Messages } from "./Messages";
 
@@ -7,6 +7,7 @@ export const metadata: Metadata = { title: "Messages" };
 
 export default async function MessagesPage() {
   const ctx = await getCtx();
+  requireModule(ctx, "messages");
   const members = await loadMembers(ctx.workspace.id);
   return (
     <div className="space-y-4">

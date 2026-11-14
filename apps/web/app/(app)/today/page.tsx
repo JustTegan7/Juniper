@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { formatDay, formatTimeIn, isManager, isRetail, utcToZoned } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { formatDay, formatTimeIn, isManager, utcToZoned } from "@evergreen/core";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { upcomingFor } from "../../../lib/services/appointments";
 import { clockStatus } from "../../../lib/services/timeclock";
 import { listTimeOff } from "../../../lib/services/timeoff";
@@ -12,7 +11,7 @@ export const metadata: Metadata = { title: "Today" };
 
 export default async function TodayPage() {
   const ctx = await getCtx();
-  if (isRetail(ctx.workspace.template) && ctx.workspace.settings.shop.enabled) redirect("/register");
+  requireModule(ctx, "appointments");
   const tz = ctx.workspace.timezone;
   const [mine, clock, off] = await Promise.all([upcomingFor(ctx, ctx.membershipId, 7), clockStatus(ctx), isManager(ctx.role) ? listTimeOff(ctx, { scope: "open" }) : Promise.resolve([])]);
   const pending = off.filter((t) => t.status === "pending");

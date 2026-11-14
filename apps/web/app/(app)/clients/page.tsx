@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { clientName, formatPhone, searchClients } from "../../../lib/services/clients";
 import { ClientForm } from "./ClientForm";
 
@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: "Clients" };
 
 export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const ctx = await getCtx();
+  requireModule(ctx, "customers");
   const { q = "" } = await searchParams;
   const rows = await searchClients(ctx, q.slice(0, 100), 100);
   const v = ctx.workspace.vocab;
