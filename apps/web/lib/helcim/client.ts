@@ -152,3 +152,40 @@ export function verifyPayHash(response: unknown, secretToken: string): boolean {
   if (typeof hash !== "string" || !data || typeof data !== "object") return false;
   return [false, true].some((esc) => createHash("sha256").update(helcimJson(data, esc) + secretToken).digest("hex") === hash.toLowerCase());
 }
+
+export interface RefundInput {
+  /** The sale being refunded. */
+  originalTransactionId: string;
+  amountCents: number;
+  idempotencyKey: string;
+  ipAddress: string;
+}
+
+export interface RefundResult {
+  status: "approved" | "declined" | "other";
+  transactionId: string | null;
+  raw: unknown;
+}
+
+/**
+ * Refunds part or all of a card sale. Field names and the same-day void rules are confirmed on test day.
+ * Throws HelcimError: status 0 or 5xx means the answer is unknown (check Helcim before retrying), 4xx means Helcim refused.
+ */
+export async function refundTransaction(auth: HelcimAuth, input: RefundInput, fetchImpl: Fetch = fetch): Promise<RefundResult> {
+  const id = /^\d+$/.test(input.originalTransactionId) ? Number(input.originalTransactionId) : input.originalTransactionId;
+  let res: Response;
+  try {
+    res = await fetchImpl(`${BASE}/payment/refund`, {
+      method: "POST",
+      headers: headers(auth, { "content-type": "application/json", "idempotency-key": input.idempotencyKey }),
+      body: JSON.stringify({ originalTransactionId: id, amount: Number((input.amountCents / 100).toFixed(2)), ipAddress: input.ipAddress, ecommerce: false }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    throw new HelcimError("No answer from Helcim", 0, false);
+  }
+  if (!res.ok) throw new HelcimError(`Helcim refused the refund (${res.status})`, res.status, false);
+  const j = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  const st = String(j.status ?? "").toUpperCase();
+  return { status: st === "APPROVED" ? "approved" : st === "DECLINED" ? "declined" : "other", transactionId: j.transactionId == null ? null : String(j.transactionId), raw: j };
+}

@@ -50,6 +50,13 @@
       "when": 1794618555095,
       "tag": "0006_team_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794622614306,
+      "tag": "0007_refunds",
+      "breakpoints": true
     }
   ]
 }

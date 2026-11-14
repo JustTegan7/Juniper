@@ -173,3 +173,10 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - Only Evergreen changes them, on the admin page (Features button). Businesses cannot hide or show screens themselves.
 - Hidden screens redirect to the first screen that is on. Nothing is deleted, and turning a part back on restores it. This is a screen switch, not a permission check: services still enforce roles and the shop flag.
 - Turning appointments off also turns online booking off. Turning the store off also turns the online shop off.
+
+## Refunds and returns (2026-11-13)
+- Managers only. Pick items and quantities from a paid order; sales tax is refunded in proportion to item value, and the refund that finishes the last item takes the rounding left over. Shipping is an optional extra. Total refunded can never exceed what the customer paid.
+- Cash orders: the refund settles at once and the screen tells the manager to give cash back. Card orders: Helcim is called first (`POST /payment/refund`, unique idempotency key), and money, stock and order status only change when Helcim approves.
+- If Helcim cannot be reached the refund stays pending. Stock does not move, nothing else can be refunded on that order, and the manager can retry (same key, so it cannot refund twice), record it as done by hand, or clear it, each with a note.
+- Returned items go back on the shelf by default. A manager can untick that for damaged goods. Returns are exempt from the one-row-per-order-and-product stock rule so an order can come back in several parts.
+- Unverified until test day: Helcim's refund field names, whether same-day refunds must be voids instead, and the IP address Helcim wants. The code fails closed.
