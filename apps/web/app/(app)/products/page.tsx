@@ -16,7 +16,7 @@ export default async function ProductsPage() {
     <div className="space-y-4">
       <h1 className="text-3xl font-bold">Products</h1>
       <ProductManager
-        products={rows.map((p) => ({ id: p.id, sku: p.sku, name: p.name, description: p.description, priceCents: p.priceCents, active: p.active, shippingAllowed: p.shippingAllowed, pickupAllowed: p.pickupAllowed, onHand: p.onHand }))}
+        products={rows.map((p) => ({ id: p.id, sku: p.sku, name: p.name, description: p.description, priceCents: p.priceCents, active: p.active, shippingAllowed: p.shippingAllowed, pickupAllowed: p.pickupAllowed, onHand: p.onHand, images: (p.images as string[] | null) ?? [] }))}
       />
     </div>
   );

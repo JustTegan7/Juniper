@@ -186,3 +186,10 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - Estimated gross pay on timesheets is off by default (`time.showPayEstimates`), with a separate switch for employees seeing their own (`time.employeesSeeOwnPay`). Hourly: regular hours plus overtime at 1.5x. Salary: one period's share of the year, no overtime. Labeled as before taxes, tips and time off.
 - "Export hours for payroll" CSV: first_name, last_name, email, regular_hours, overtime_hours, double_overtime_hours. No rates in it.
 - Optional payroll provider name and https link shown on timesheets. No bank details anywhere in Juniper.
+
+## Product photos (2026-11-13)
+- Photos are stored in Vercel Blob (public links, path `<workspaceId>/products/<id>.<ext>`) and the links are saved in `products.images`, same as before. Pasted https image links still work.
+- The browser shrinks each photo to 1600px JPEG before upload so it stays under Vercel's request size limit. The server accepts up to 2.5 MB and checks the file's first bytes, so only real JPEG, PNG or WebP files are stored (no SVG or HTML).
+- Owners and managers only. Needs `BLOB_READ_WRITE_TOKEN` (added when a Blob store is connected to the Vercel project). Without it the upload says so and the link box still works.
+- Removing a photo from a product does not delete the file from Blob. Orphans are tiny and harmless for v1.
+- Fixed: editing a product used to reset its images to none because the form never sent them.
