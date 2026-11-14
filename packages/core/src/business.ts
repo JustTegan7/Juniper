@@ -164,6 +164,8 @@ export const workspaceSettingsSchema = z.object({
       enabled: z.boolean().default(false),
       /** Public online shop at /shop/<slug>. Needs the shop on and Helcim connected. */
       onlineEnabled: z.boolean().default(false),
+      /** Websites allowed to call the shop API from a browser, as origins like https://shop.example.com. */
+      allowedOrigins: z.array(z.string().max(200).refine((v) => normalizeOrigin(v) !== null, "Website addresses must start with https://")).max(10).default([]),
       /** One flat shipping charge per online order that ships, in cents. */
       shippingFlatCents: z.number().int().min(0).max(100000).default(0),
       /** Sales tax added to product sales, in percent. Zero means no tax is added. */
@@ -235,3 +237,15 @@ export const STATUS_LABELS: Record<AppointmentStatus, string> = {
 };
 /** Statuses that hold a staff member's time. */
 export const HOLDING_STATUSES: AppointmentStatus[] = ["booked", "confirmed", "checked_in", "completed"];
+
+/** "https://Shop.Example.com/path" to "https://shop.example.com". Null unless it is https (or http on localhost). */
+export function normalizeOrigin(v: string): string | null {
+  try {
+    const u = new URL(v.trim());
+    const local = u.hostname === "localhost" || u.hostname === "127.0.0.1";
+    if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) return null;
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
