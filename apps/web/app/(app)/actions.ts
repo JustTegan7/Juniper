@@ -55,6 +55,7 @@ export const cancelOrderAction = async (input: unknown) => run((c) => orders.can
 /** Polled by the register while a card payment is waiting. Does not refresh the page. */
 export async function orderStatusAction(orderId: string) {
   const ctx = await getCtx();
+  await orders.reapStalePayments(ctx.workspace.id);
   const r = await orders.getOrder(ctx, String(orderId));
   if (!r) return null;
   return { status: r.order.status, paymentStatus: r.payment?.status ?? null, needsReview: r.payment?.needsReview ?? false };

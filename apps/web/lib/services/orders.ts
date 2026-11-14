@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { auditLog, helcimConnections, helcimDevices, orderCounters, orderItems, orders, payments, products, stockMovements } from "@evergreen/db";
 import { batch, db } from "../db";
@@ -210,4 +210,23 @@ export async function getOrder(ctx: Ctx, orderId: string) {
 
 export async function listRecentOrders(ctx: Ctx, limit = 25) {
   return db().select().from(orders).where(and(eq(orders.workspaceId, ctx.workspace.id), eq(orders.channel, "in_person"))).orderBy(desc(orders.createdAt)).limit(limit);
+}
+
+/**
+ * Settles card payments that have waited too long for any answer (device off, customer left, webhook lost).
+ * They become timed_out, which still accepts a late approval from Helcim, and the order reopens so the device is free.
+ * Runs whenever the register loads or polls, so it needs no cron job.
+ */
+export async function reapStalePayments(workspaceId: string, now = new Date(), maxAgeMinutes = 10): Promise<number> {
+  const d = db();
+  const cutoff = new Date(now.getTime() - maxAgeMinutes * 60_000);
+  const stale = await d
+    .update(payments)
+    .set({ status: "timed_out", resolvedAt: now })
+    .where(and(eq(payments.workspaceId, workspaceId), eq(payments.status, "pending"), eq(payments.channel, "in_person"), lt(payments.requestedAt, cutoff)))
+    .returning({ orderId: payments.orderId, id: payments.id });
+  if (!stale.length) return 0;
+  await d.update(orders).set({ status: "draft" }).where(and(eq(orders.workspaceId, workspaceId), inArray(orders.id, stale.map((x) => x.orderId)), eq(orders.status, "awaiting_payment")));
+  await d.insert(auditLog).values(stale.map((x) => auditRow({ workspaceId, userId: null, label: "System" }, "payment", x.id, "timed_out", { status: "pending" }, { status: "timed_out" })));
+  return stale.length;
 }
