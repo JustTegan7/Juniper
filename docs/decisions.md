@@ -181,6 +181,12 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - Returned items go back on the shelf by default. A manager can untick that for damaged goods. Returns are exempt from the one-row-per-order-and-product stock rule so an order can come back in several parts.
 - Unverified until test day: Helcim's refund field names, whether same-day refunds must be voids instead, and the IP address Helcim wants. The code fails closed.
 
+## Pay profiles and payroll export (2026-11-13)
+- `memberships.pay_type` and `pay_rate_cents` (hourly: cents per hour, salary: cents per year). Owners only for reading and writing; the audit trail records that a rate changed, never the amount.
+- Estimated gross pay on timesheets is off by default (`time.showPayEstimates`), with a separate switch for employees seeing their own (`time.employeesSeeOwnPay`). Hourly: regular hours plus overtime at 1.5x. Salary: one period's share of the year, no overtime. Labeled as before taxes, tips and time off.
+- "Export hours for payroll" CSV: first_name, last_name, email, regular_hours, overtime_hours, double_overtime_hours. No rates in it.
+- Optional payroll provider name and https link shown on timesheets. No bank details anywhere in Juniper.
+
 ## Product photos (2026-11-13)
 - Photos are stored in Vercel Blob (public links, path `<workspaceId>/products/<id>.<ext>`) and the links are saved in `products.images`, same as before. Pasted https image links still work.
 - The browser shrinks each photo to 1600px JPEG before upload so it stays under Vercel's request size limit. The server accepts up to 2.5 MB and checks the file's first bytes, so only real JPEG, PNG or WebP files are stored (no SVG or HTML).
