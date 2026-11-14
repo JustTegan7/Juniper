@@ -34,7 +34,7 @@ const { createBusiness } = await import("./workspace");
 const { saveProduct, onHandFor } = await import("./products");
 const { saveHelcimConnection, saveHelcimDevice, loadHelcimSettings } = await import("./helcim-connection");
 const { resolveCardTransaction } = await import("./helcim-payments");
-const { abandonPayment, cancelOrder, chargeCard, createOrder, getOrder, payWithCash, taxFor } = await import("./orders");
+const { reapStalePayments, abandonPayment, cancelOrder, chargeCard, createOrder, getOrder, payWithCash, taxFor } = await import("./orders");
 type Ctx = import("./ctx").Ctx;
 
 async function seed(slug: string, taxRatePercent = 0) {
@@ -199,5 +199,34 @@ describe("abandonPayment and cancelOrder", () => {
     await cancelOrder(ctx, { orderId: o.id });
     await expect(cancelOrder(ctx, { orderId: o.id })).rejects.toThrow(/Only an unpaid/);
     await expect(payWithCash(ctx, { orderId: o.id })).rejects.toThrow(/can no longer/);
+  });
+});
+
+describe("reapStalePayments", () => {
+  it("times out old pending payments, frees the device, and a late approval still pays", async () => {
+    const { ctx, ws, game } = await seed("shop-a");
+    const deviceId = await withDevice(ctx);
+    const o = await createOrder(ctx, { items: [{ productId: game, quantity: 1 }] });
+    await chargeCard(ctx, { orderId: o.id, deviceId }, ok());
+    expect(await reapStalePayments(ws.id, new Date(), 10)).toBe(0);
+    expect((await getOrder(ctx, o.id))!.order.status).toBe("awaiting_payment");
+    expect(await reapStalePayments(ws.id, new Date(Date.now() + 11 * 60_000), 10)).toBe(1);
+    const full = await getOrder(ctx, o.id);
+    expect(full!.order.status).toBe("draft");
+    expect(full!.payment!.status).toBe("timed_out");
+    const o2 = await createOrder(ctx, { items: [{ productId: game, quantity: 1 }] });
+    await expect(chargeCard(ctx, { orderId: o2.id, deviceId }, ok())).resolves.toBeTruthy();
+    const r = await resolveCardTransaction(ws.id, { transactionId: "late2", status: "approved", amountCents: 2000, invoiceNumber: "1", deviceCode: "AB12", raw: {} } as never, new Date());
+    expect(r).toBe("paid");
+  });
+
+  it("leaves other businesses alone", async () => {
+    const a = await seed("shop-a");
+    const b = await seed("shop-b");
+    const deviceId = await withDevice(a.ctx);
+    const o = await createOrder(a.ctx, { items: [{ productId: a.game, quantity: 1 }] });
+    await chargeCard(a.ctx, { orderId: o.id, deviceId }, ok());
+    expect(await reapStalePayments(b.ws.id, new Date(Date.now() + 60 * 60_000))).toBe(0);
+    expect((await getOrder(a.ctx, o.id))!.order.status).toBe("awaiting_payment");
   });
 });
