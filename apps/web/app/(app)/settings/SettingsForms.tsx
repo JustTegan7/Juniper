@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Vocabulary, WeeklyHours, WorkspaceSettings } from "@evergreen/core";
+import { normalizeOrigin } from "@evergreen/core";
 import type { HelcimSettings } from "../../../lib/services/helcim-connection";
 import { saveBusinessHoursAction, saveHelcimConnectionAction, saveHelcimDeviceAction, updateBusinessAction, updateSettingsAction } from "../actions";
 import { useAct } from "../../../components/app/useAct";
@@ -281,7 +282,7 @@ function DeviceRow({ device }: { device?: HelcimSettings["devices"][number] }) {
 export function ShopForm({ initial }: { initial: WorkspaceSettings["shop"] }) {
   const { act, pending } = useAct();
   return (
-    <form className="grid gap-3 sm:grid-cols-3" action={(f) => act(() => updateSettingsAction({ section: "shop", values: { enabled: f.get("enabled") === "on", onlineEnabled: f.get("onlineEnabled") === "on", taxRatePercent: Number(f.get("taxRatePercent") || 0), shippingFlatCents: Math.round(Number(f.get("shipping") || 0) * 100) } }))}>
+    <form className="grid gap-3 sm:grid-cols-3" action={(f) => act(() => updateSettingsAction({ section: "shop", values: { enabled: f.get("enabled") === "on", onlineEnabled: f.get("onlineEnabled") === "on", taxRatePercent: Number(f.get("taxRatePercent") || 0), shippingFlatCents: Math.round(Number(f.get("shipping") || 0) * 100), allowedOrigins: [...new Set(String(f.get("origins") ?? "").split(/[\s,]+/).filter(Boolean).map((o) => normalizeOrigin(o) ?? o))] } }))}>
       <label className="flex items-center gap-2 sm:pt-6"><input name="enabled" type="checkbox" defaultChecked={initial.enabled} /><span>Sell products</span></label>
       <label className="block">
         <span className="label">Sales tax rate (%)</span>
@@ -293,6 +294,11 @@ export function ShopForm({ initial }: { initial: WorkspaceSettings["shop"] }) {
         <span className="label">Flat shipping ($)</span>
         <input name="shipping" type="number" step="0.01" min={0} max={1000} className="input" defaultValue={(initial.shippingFlatCents / 100).toFixed(2)} />
         <span className="mt-1 block text-xs text-muted">Charged once on online orders that ship. Needs Helcim connected.</span>
+      </label>
+      <label className="block sm:col-span-3">
+        <span className="label">Websites that can use the shop API</span>
+        <textarea name="origins" className="input font-mono text-xs" rows={2} defaultValue={initial.allowedOrigins.join("\n")} placeholder="https://shop.yourbusiness.com" />
+        <span className="mt-1 block text-xs text-muted">One address per line, https only. Your own site calls Juniper for products and checkout. Leave empty if you only use the shop page here.</span>
       </label>
       <div className="flex items-end"><button className="btn btn-primary btn-sm" disabled={pending}>Save</button></div>
     </form>
