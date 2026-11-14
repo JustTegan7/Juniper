@@ -5,7 +5,7 @@ import { getCtx } from "../../../lib/services/ctx";
 import { loadHelcimSettings } from "../../../lib/services/helcim-connection";
 import { loadBusinessHours } from "../../../lib/services/hours";
 import { appUrl } from "../../../lib/platform";
-import { BookingRules, BusinessDetails, BusinessHoursForm, ContactForm, HelcimForm, EmbedSnippet, TimeRulesForm, VocabularyForm } from "./SettingsForms";
+import { BookingRules, BusinessDetails, BusinessHoursForm, ContactForm, HelcimForm, ShopForm, EmbedSnippet, TimeRulesForm, VocabularyForm } from "./SettingsForms";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -47,6 +47,9 @@ export default async function SettingsPage() {
       </Section>
       <Section id="h-time" title="Time clock rules" note={ctx.role === "owner" ? "Defaults follow Washington State: overtime after 40 hours a week, a 30 minute meal break for shifts over 5 hours. Check with your payroll provider before changing them." : "Only an owner can change these."}>
         <TimeRulesForm initial={ws.settings.time} disabled={ctx.role !== "owner"} />
+      </Section>
+      <Section id="h-shop" title="Shop and register" note="Turn this on to sell products at the counter. It adds Products and Register to the menu.">
+        <ShopForm initial={ws.settings.shop} />
       </Section>
       {helcim && (
         <Section id="h-helcim" title="Card payments (Helcim)" note="Connect your Helcim account so the register can take card payments on your Helcim devices and the online shop can take cards. Tokens are stored encrypted and are never shown again.">

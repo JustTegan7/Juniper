@@ -9,6 +9,8 @@ import * as catalog from "../../lib/services/catalog";
 import * as clients from "../../lib/services/clients";
 import * as helcim from "../../lib/services/helcim-connection";
 import * as hours from "../../lib/services/hours";
+import * as orders from "../../lib/services/orders";
+import * as products from "../../lib/services/products";
 import * as settings from "../../lib/services/settings";
 import * as team from "../../lib/services/team";
 import * as clock from "../../lib/services/timeclock";
@@ -38,6 +40,25 @@ export const saveStaffOverrideAction = async (input: unknown) => run((c) => cata
 // Card payments (Helcim)
 export const saveHelcimConnectionAction = async (input: unknown) => run((c) => helcim.saveHelcimConnection(c, input));
 export const saveHelcimDeviceAction = async (input: unknown) => run((c) => helcim.saveHelcimDevice(c, input));
+
+// Products and stock
+export const saveProductAction = async (input: unknown) => run((c) => products.saveProduct(c, input));
+export const archiveProductAction = async (input: unknown) => run((c) => products.archiveProduct(c, input));
+export const adjustStockAction = async (input: unknown) => run((c) => products.adjustStock(c, input));
+
+// Register
+export const createOrderAction = async (input: unknown) => run((c) => orders.createOrder(c, input));
+export const payWithCashAction = async (input: unknown) => run((c) => orders.payWithCash(c, input));
+export const chargeCardAction = async (input: unknown) => run((c) => orders.chargeCard(c, input));
+export const abandonPaymentAction = async (input: unknown) => run((c) => orders.abandonPayment(c, input));
+export const cancelOrderAction = async (input: unknown) => run((c) => orders.cancelOrder(c, input));
+/** Polled by the register while a card payment is waiting. Does not refresh the page. */
+export async function orderStatusAction(orderId: string) {
+  const ctx = await getCtx();
+  const r = await orders.getOrder(ctx, String(orderId));
+  if (!r) return null;
+  return { status: r.order.status, paymentStatus: r.payment?.status ?? null, needsReview: r.payment?.needsReview ?? false };
+}
 
 // Hours
 export const saveBusinessHoursAction = async (input: unknown) => run((c) => hours.saveBusinessHours(c, input));

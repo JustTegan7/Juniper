@@ -24,6 +24,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ]);
   const color = members.find((m) => m.id === ctx.userId)?.color ?? "#4F5D95";
   const v = ctx.workspace.vocab;
+  const shopNav: NavItem[] = ctx.workspace.settings.shop.enabled
+    ? [{ href: "/register", label: "Register", icon: "register" }, ...(manager ? [{ href: "/products", label: "Products", icon: "products" } as NavItem] : [])]
+    : [];
   const nav: NavItem[] = [
     { href: "/today", label: "Today", icon: "home" },
     { href: "/calendar", label: "Calendar", icon: "calendar" },
@@ -31,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/clock", label: "Time clock", icon: "clock" },
     { href: "/time-off", label: "Time off", icon: "timeoff", badge: Number(pending[0]?.n ?? 0) || undefined },
     { href: "/timesheets", label: "Timesheets", icon: "timesheets" },
+    ...shopNav,
     ...(manager
       ? ([
           { href: "/services", label: v.servicePlural, icon: "services" },
