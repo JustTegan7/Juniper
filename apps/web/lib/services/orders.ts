@@ -1,12 +1,12 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { auditLog, helcimConnections, helcimDevices, orderCounters, orderItems, orders, payments, products, stockMovements } from "@evergreen/db";
 import { batch, db } from "../db";
 import { auditRow } from "../audit";
 import { decryptSecret } from "../helcim/crypto";
 import { HelcimError, newIdempotencyKey, startPurchase } from "../helcim/client";
-import { actorOf, type Ctx } from "./ctx";
+import { actorOf, requireManager, type Ctx } from "./ctx";
 import { onHandFor } from "./products";
 import { buildReceipt } from "../receipt";
 import { sendEmail } from "../email";
@@ -260,4 +260,58 @@ export async function emailReceipt(ctx: Ctx, raw: unknown) {
   const r = await sendOrderReceipt(ctx.workspace.id, orderId, { name: w.name ?? "Our shop", timezone: w.timezone ?? "America/Los_Angeles", phone: w.settings.contact?.phone, address: w.settings.contact?.address }, email || undefined);
   if (!r.sent) throw new Error(r.reason ?? "The receipt could not be sent.");
   return { message: "Receipt emailed." };
+}
+
+export type OrderFilter = "attention" | "open" | "all";
+
+/**
+ * Orders for the staff list. "attention" is anything a person has to look at: a payment flagged for review,
+ * or a paid online order not yet shipped or picked up. "open" is unpaid and in progress.
+ */
+export async function listOrdersForStaff(ctx: Ctx, filter: OrderFilter = "attention", limit = 100) {
+  const d = db();
+  const ws = ctx.workspace.id;
+  const flagged = d.select({ id: payments.orderId }).from(payments).where(and(eq(payments.workspaceId, ws), eq(payments.needsReview, true)));
+  const where =
+    filter === "attention"
+      ? and(eq(orders.workspaceId, ws), or(and(eq(orders.channel, "online"), eq(orders.status, "paid")), inArray(orders.id, flagged)))
+      : filter === "open"
+        ? and(eq(orders.workspaceId, ws), inArray(orders.status, ["draft", "awaiting_payment"]))
+        : eq(orders.workspaceId, ws);
+  const rows = await d.select().from(orders).where(where).orderBy(desc(orders.createdAt)).limit(limit);
+  if (!rows.length) return [];
+  const ids = rows.map((r) => r.id);
+  const [items, pays] = await Promise.all([
+    d.select().from(orderItems).where(and(eq(orderItems.workspaceId, ws), inArray(orderItems.orderId, ids))).orderBy(asc(orderItems.name)),
+    d.select().from(payments).where(and(eq(payments.workspaceId, ws), inArray(payments.orderId, ids))).orderBy(desc(payments.requestedAt)),
+  ]);
+  return rows.map((o) => {
+    const p = pays.find((x) => x.orderId === o.id) ?? null;
+    return {
+      order: o,
+      items: items.filter((i) => i.orderId === o.id),
+      payment: p ? { id: p.id, status: p.status, needsReview: p.needsReview, reviewReason: (p.raw as { reviewReason?: string } | null)?.reviewReason ?? null, tender: (p.raw as { tender?: string } | null)?.tender ?? (p.deviceId ? "card device" : p.channel === "online" ? "online card" : null) } : null,
+    };
+  });
+}
+
+/** Marks a paid order shipped or picked up. */
+export async function fulfillOrder(ctx: Ctx, raw: unknown) {
+  const { orderId } = orderRef.parse(raw);
+  const d = db();
+  const r = await d.update(orders).set({ status: "fulfilled" }).where(and(eq(orders.id, orderId), eq(orders.workspaceId, ctx.workspace.id), eq(orders.status, "paid"))).returning({ id: orders.id, fulfillment: orders.fulfillment });
+  if (!r.length) throw new Error("Only a paid order can be marked done.");
+  await d.insert(auditLog).values(auditRow(actorOf(ctx), "order", orderId, "fulfilled", { status: "paid" }, { status: "fulfilled" }));
+  return { message: r[0]!.fulfillment === "ship" ? "Marked shipped." : "Marked picked up." };
+}
+
+/** A manager has looked at a flagged payment (refunded in Helcim, or checked and fine). The note is kept in the audit trail. */
+export async function resolveReview(ctx: Ctx, raw: unknown) {
+  requireManager(ctx);
+  const { paymentId, note } = z.object({ paymentId: z.uuid(), note: z.string().trim().min(1, "Say what you did").max(300) }).parse(raw);
+  const d = db();
+  const r = await d.update(payments).set({ needsReview: false }).where(and(eq(payments.id, paymentId), eq(payments.workspaceId, ctx.workspace.id), eq(payments.needsReview, true))).returning({ id: payments.id });
+  if (!r.length) throw new Error("That payment is not waiting for review.");
+  await d.insert(auditLog).values(auditRow(actorOf(ctx), "payment", paymentId, "review_resolved", { needsReview: true }, { needsReview: false, note }));
+  return { message: "Marked as handled." };
 }
