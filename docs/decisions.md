@@ -158,3 +158,9 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - One Helcim webhook URL per connected account (`/api/webhooks/helcim/<connectionKey>`) because verifier tokens are per account. Tokens are stored AES-256-GCM encrypted with `HELCIM_ENCRYPTION_KEY`.
 - Only one pending payment per device, enforced by a partial unique index, because Helcim does not queue requests to a device.
 - Preview deploys get their own Neon branch. The free plan allows 10 branches, so delete old `preview/*` branches when a preview fails at "Provisioning Integrations".
+
+## Team chat (2026-11-13)
+- Direct messages and groups, one level of threads, soft delete. Full spec in `docs/team-chat-spec.md`.
+- Web polls every 5 seconds while the tab is visible; no websockets. Revisit if it feels slow.
+- Push text never includes message content. Muted conversations get no push and do not add to the badge.
+- Phone screens and the global message-push toggle wait for the app step.

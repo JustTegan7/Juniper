@@ -43,6 +43,13 @@
       "when": 1794613261602,
       "tag": "0005_stock_sale_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794618555095,
+      "tag": "0006_team_chat",
+      "breakpoints": true
     }
   ]
 }

@@ -125,6 +125,7 @@ export const memberships = pgTable(
     pushBookings: boolean("push_bookings").notNull().default(true),
     /** Phone push: time off requests (managers) and decisions (the requester). */
     pushTimeOff: boolean("push_time_off").notNull().default(true),
+    pushMessages: boolean("push_messages").notNull().default(true),
     ...stamps,
   },
   (t) => [uniqueIndex("memberships_ws_user").on(t.workspaceId, t.userId), index("memberships_user").on(t.userId)],
@@ -608,4 +609,52 @@ export const webhookEvents = pgTable(
     processedAt: timestamp("processed_at", { withTimezone: true }),
   },
   (t) => [uniqueIndex("webhook_events_webhook_id").on(t.webhookId)],
+);
+
+// ---- Team chat (docs/team-chat-spec.md) ----
+
+export const conversationKind = pgEnum("conversation_kind", ["group", "direct"]);
+
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    kind: conversationKind("kind").notNull(),
+    /** Name of a group. Null for direct messages. */
+    title: text("title"),
+    createdByMembershipId: uuid("created_by_membership_id").references(() => memberships.id, { onDelete: "set null" }),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
+    ...stamps,
+  },
+  (t) => [index("conversations_ws_last").on(t.workspaceId, t.lastMessageAt)],
+);
+
+export const conversationMembers = pgTable(
+  "conversation_members",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+    membershipId: uuid("membership_id").notNull().references(() => memberships.id, { onDelete: "cascade" }),
+    lastReadAt: timestamp("last_read_at", { withTimezone: true }).notNull().defaultNow(),
+    muted: boolean("muted").notNull().default(false),
+    ...stamps,
+  },
+  (t) => [uniqueIndex("conversation_members_pair").on(t.conversationId, t.membershipId), index("conversation_members_membership").on(t.membershipId)],
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+    senderMembershipId: uuid("sender_membership_id").references(() => memberships.id, { onDelete: "set null" }),
+    /** Set on a reply. Points at a top level message in the same conversation. */
+    parentId: uuid("parent_id"),
+    body: text("body").notNull(),
+    ...stamps,
+  },
+  (t) => [index("messages_conversation_created").on(t.conversationId, t.createdAt), index("messages_parent").on(t.parentId)],
 );

@@ -5,6 +5,7 @@ import { isManager } from "@evergreen/core";
 import { getCtx } from "../../lib/services/ctx";
 import { db } from "../../lib/db";
 import { loadMembers } from "../../lib/services/workspace";
+import { unreadTotal } from "../../lib/services/messages";
 import { Shell } from "../../components/app/Shell";
 import { ToastProvider } from "../../components/app/Toast";
 import type { NavItem } from "../../components/app/Nav";
@@ -16,11 +17,12 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getCtx();
   const manager = isManager(ctx.role);
-  const [members, pending] = await Promise.all([
+  const [members, pending, unread] = await Promise.all([
     loadMembers(ctx.workspace.id),
     manager
       ? db().select({ n: count() }).from(timeOff).where(and(eq(timeOff.workspaceId, ctx.workspace.id), eq(timeOff.status, "pending"), isNull(timeOff.deletedAt)))
       : Promise.resolve([{ n: 0 }]),
+    unreadTotal(ctx),
   ]);
   const color = members.find((m) => m.id === ctx.userId)?.color ?? "#4F5D95";
   const v = ctx.workspace.vocab;
@@ -30,6 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const nav: NavItem[] = [
     { href: "/today", label: "Today", icon: "home" },
     { href: "/calendar", label: "Calendar", icon: "calendar" },
+    { href: "/messages", label: "Messages", icon: "chat", badge: unread || undefined },
     { href: "/clients", label: v.clientPlural, icon: "clients" },
     { href: "/clock", label: "Time clock", icon: "clock" },
     { href: "/time-off", label: "Time off", icon: "timeoff", badge: Number(pending[0]?.n ?? 0) || undefined },

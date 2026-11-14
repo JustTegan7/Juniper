@@ -10,6 +10,7 @@ export default async function MorePage() {
   const ctx = await getCtx();
   const v = ctx.workspace.vocab;
   const links = [
+    { href: "/messages", label: "Messages" },
     { href: "/time-off", label: "Time off" },
     { href: "/timesheets", label: "Timesheets" },
     ...(ctx.workspace.settings.shop.enabled ? [{ href: "/register", label: "Register" }, ...(isManager(ctx.role) ? [{ href: "/products", label: "Products" }] : [])] : []),
