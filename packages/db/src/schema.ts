@@ -83,6 +83,7 @@ export const verification = pgTable("verification", {
 // ---------- Core ----------
 
 export const role = pgEnum("role", ["owner", "manager", "member"]);
+export const payType = pgEnum("pay_type", ["hourly", "salary"]);
 
 /** A business using the app. Everything else hangs off this id. */
 export const workspaces = pgTable(
@@ -126,6 +127,9 @@ export const memberships = pgTable(
     /** Phone push: time off requests (managers) and decisions (the requester). */
     pushTimeOff: boolean("push_time_off").notNull().default(true),
     pushMessages: boolean("push_messages").notNull().default(true),
+    /** Pay profile, owners only. Hourly: payRateCents is per hour. Salary: payRateCents is per year. Null means not set. */
+    payType: payType("pay_type"),
+    payRateCents: integer("pay_rate_cents"),
     ...stamps,
   },
   (t) => [uniqueIndex("memberships_ws_user").on(t.workspaceId, t.userId), index("memberships_user").on(t.userId)],

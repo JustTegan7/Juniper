@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   if (!isManager(ctx.role)) return new NextResponse("Not allowed", { status: 403 });
   const start = req.nextUrl.searchParams.get("start") ?? "";
   const end = req.nextUrl.searchParams.get("end") ?? "";
-  const mode = req.nextUrl.searchParams.get("mode") === "detail" ? "detail" : "summary";
+  const m = req.nextUrl.searchParams.get("mode");
+  const mode = m === "detail" ? "detail" : m === "payroll" ? "payroll" : "summary";
   if (!isYmd(start) || !isYmd(end) || end < start) return new NextResponse("Bad dates", { status: 400 });
   const csv = await timesheetCsv(ctx, start, end, mode);
   const name = `${ctx.workspace.slug}-timesheets-${start}-to-${end}-${mode}.csv`;

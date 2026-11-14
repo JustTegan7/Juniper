@@ -166,6 +166,13 @@ export const workspaceSettingsSchema = z.object({
       payPeriod: z.enum(["weekly", "biweekly", "semimonthly"]).default("biweekly"),
       /** Any first day of a pay period, for weekly and biweekly. */
       payPeriodAnchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).default("2026-01-04"),
+      /** Owners see estimated gross pay on timesheets. Needs pay rates on the Pay page. */
+      showPayEstimates: z.boolean().default(false),
+      /** Each person sees their own estimate on their timesheet. */
+      employeesSeeOwnPay: z.boolean().default(false),
+      /** Where employees manage direct deposit and paychecks, for example Gusto. Juniper never holds bank details. */
+      payrollName: z.string().max(60).default(""),
+      payrollUrl: z.string().max(300).refine((v) => v === "" || /^https:\/\/\S+$/.test(v), "The payroll link must start with https://").default(""),
     })
     .prefault({}),
   /**

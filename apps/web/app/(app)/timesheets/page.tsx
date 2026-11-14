@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { FLAG_LABELS, formatDay, formatHours, formatTimeIn, isManager, isYmd, nextPayPeriod, payPeriodFor, previousPayPeriod, toHm, utcToZoned } from "@evergreen/core";
+import { estimatePay, FLAG_LABELS, formatDay, formatHours, formatTimeIn, isManager, isYmd, nextPayPeriod, payPeriodFor, previousPayPeriod, toHm, utcToZoned } from "@evergreen/core";
 import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { loadTimesheets } from "../../../lib/services/timeclock";
+import { payProfileMap } from "../../../lib/services/pay";
 import { loadMembers } from "../../../lib/services/workspace";
 import { EntryEditor } from "./EntryEditor";
 
@@ -19,7 +20,10 @@ export default async function TimesheetsPage({ searchParams }: { searchParams: P
   const next = nextPayPeriod(period, t.payPeriod, t.payPeriodAnchor);
   const manager = isManager(ctx.role);
   const person = manager ? sp.person : ctx.membershipId;
-  const [sheets, members] = await Promise.all([loadTimesheets(ctx, period.start, period.end), manager ? loadMembers(ctx.workspace.id) : Promise.resolve([])]);
+  const [sheets, members, profiles] = await Promise.all([loadTimesheets(ctx, period.start, period.end), manager ? loadMembers(ctx.workspace.id) : Promise.resolve([]), payProfileMap(ctx)]);
+  const estimate = (id: string, sheet: { regularMinutes: number; overtimeMinutes: number }) => estimatePay(profiles.get(id) ?? null, sheet, t.payPeriod);
+  const money = (c: number | null) => (c === null ? "Not set" : `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+  const showEstimates = profiles.size > 0 || (ctx.role === "owner" && t.showPayEstimates);
   const detail = sheets.find((s) => s.member.membershipId === person) ?? (sheets.length === 1 ? sheets[0] : undefined);
   const qs = (o: Record<string, string | undefined>) => "?" + new URLSearchParams(Object.entries(o).filter((e): e is [string, string] => Boolean(e[1]))).toString();
 
@@ -37,13 +41,15 @@ export default async function TimesheetsPage({ searchParams }: { searchParams: P
           <div className="flex flex-wrap items-center justify-between gap-2 p-4">
             <h2 id="h-team" className="font-bold">Team totals</h2>
             <div className="flex gap-2">
+              <a className="btn btn-primary btn-sm" href={`/api/timesheets?start=${period.start}&end=${period.end}&mode=payroll`}>Export hours for payroll</a>
+              {ctx.role === "owner" && <Link className="btn btn-soft btn-sm" href="/pay">Pay rates</Link>}
               <a className="btn btn-soft btn-sm" href={`/api/timesheets?start=${period.start}&end=${period.end}&mode=summary`}>Export summary CSV</a>
               <a className="btn btn-soft btn-sm" href={`/api/timesheets?start=${period.start}&end=${period.end}&mode=detail`}>Export shifts CSV</a>
             </div>
           </div>
           <table className="w-full min-w-[520px] text-sm">
             <thead className="border-y border-line text-left text-xs text-muted">
-              <tr><th className="px-4 py-2">Name</th><th className="px-4 py-2">Worked</th><th className="px-4 py-2">Regular</th><th className="px-4 py-2">Overtime</th><th className="px-4 py-2">To review</th></tr>
+              <tr><th className="px-4 py-2">Name</th><th className="px-4 py-2">Worked</th><th className="px-4 py-2">Regular</th><th className="px-4 py-2">Overtime</th><th className="px-4 py-2">To review</th>{ctx.role === "owner" && showEstimates && <th className="px-4 py-2">Est. gross pay</th>}</tr>
             </thead>
             <tbody className="divide-y divide-line">
               {sheets.map((s) => (
@@ -53,18 +59,25 @@ export default async function TimesheetsPage({ searchParams }: { searchParams: P
                   <td className="px-4 py-2">{formatHours(s.sheet.regularMinutes)}</td>
                   <td className="px-4 py-2">{s.sheet.overtimeMinutes ? <span className="font-semibold text-today">{formatHours(s.sheet.overtimeMinutes)}</span> : "0:00"}</td>
                   <td className="px-4 py-2">{s.sheet.flagCount ? <span className="font-semibold text-overdue">{s.sheet.flagCount}</span> : ""}</td>
+                  {ctx.role === "owner" && showEstimates && <td className="px-4 py-2">{money(estimate(s.member.membershipId, s.sheet))}</td>}
                 </tr>
               ))}
             </tbody>
           </table>
+          {ctx.role === "owner" && showEstimates && <p className="px-4 pb-2 text-xs text-muted">Estimated pay is gross, before taxes, tips, bonuses and time off. Your payroll provider has the real numbers.</p>}
           <p className="p-4 text-xs text-muted">Overtime and break flags follow the rules on the Settings page (Washington defaults). They help you review; they are not legal advice.</p>
         </section>
+      )}
+
+      {t.payrollUrl && (
+        <p className="text-sm">Paychecks and direct deposit: <a className="underline" href={t.payrollUrl} target="_blank" rel="noreferrer noopener">{t.payrollName ? `open ${t.payrollName}` : "open your payroll provider"}</a></p>
       )}
 
       {detail && (
         <section className="card p-5" aria-labelledby="h-detail">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 id="h-detail" className="font-bold">{detail.member.name}</h2>
+            {profiles.has(detail.member.membershipId) && <span className="text-sm">Estimated gross pay: <strong>{money(estimate(detail.member.membershipId, detail.sheet))}</strong> <span className="text-muted">(before taxes, tips and time off)</span></span>}
             {manager && <EntryEditor membershipId={detail.member.membershipId} members={members.map((m) => ({ id: m.membershipId, name: m.name }))} defaultDay={ctx.today} label="Add a shift" />}
           </div>
           <ul className="mt-3 divide-y divide-line text-sm">

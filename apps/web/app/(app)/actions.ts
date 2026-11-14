@@ -12,6 +12,7 @@ import * as chat from "../../lib/services/messages";
 import * as hours from "../../lib/services/hours";
 import * as orders from "../../lib/services/orders";
 import * as refunds from "../../lib/services/refunds";
+import * as pay from "../../lib/services/pay";
 import * as products from "../../lib/services/products";
 import * as settings from "../../lib/services/settings";
 import * as team from "../../lib/services/team";
@@ -141,6 +142,9 @@ export async function switchWorkspaceAction(workspaceId: string) {
   revalidatePath("/", "layout");
   return { ok: true, message: "Switched." } as ActionResult;
 }
+
+// Pay rates (owners only)
+export const savePayProfileAction = async (input: unknown) => run((c) => pay.savePayProfile(c, input));
 
 // Team chat
 export const startDirectAction = async (input: unknown) => run((c) => chat.startDirect(c, input));

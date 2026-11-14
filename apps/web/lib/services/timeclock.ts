@@ -10,6 +10,7 @@ import {
   formatTimeIn,
   isManager,
   parseHm,
+  splitName,
   toHm,
   utcToZoned,
   weekStart,
@@ -234,12 +235,19 @@ function csvCell(v: string | number) {
 }
 
 /** Payroll export. "summary" is one row per person; "detail" is one row per shift. */
-export async function timesheetCsv(ctx: Ctx, start: string, end: string, mode: "summary" | "detail") {
+export async function timesheetCsv(ctx: Ctx, start: string, end: string, mode: "summary" | "detail" | "payroll") {
   requireManager(ctx);
   const sheets = await loadTimesheets(ctx, start, end);
   const tz = ctx.workspace.timezone;
   const rows: (string | number)[][] = [];
-  if (mode === "summary") {
+  if (mode === "payroll") {
+    // Hours only, no rates, so a manager can export it. Gusto and most payroll tools match columns by name.
+    rows.push(["first_name", "last_name", "email", "regular_hours", "overtime_hours", "double_overtime_hours"]);
+    for (const s of sheets) {
+      const { first, last } = splitName(s.member.name);
+      rows.push([first, last, s.member.email, decimalHours(s.sheet.regularMinutes), decimalHours(s.sheet.overtimeMinutes), "0.00"]);
+    }
+  } else if (mode === "summary") {
     rows.push(["Employee", "Email", "Title", "Period start", "Period end", "Worked hours", "Regular hours", "Overtime hours", "Items to review"]);
     for (const s of sheets) {
       rows.push([s.member.name, s.member.email, s.member.title ?? "", start, end, decimalHours(s.sheet.workedMinutes), decimalHours(s.sheet.regularMinutes), decimalHours(s.sheet.overtimeMinutes), s.sheet.flagCount]);

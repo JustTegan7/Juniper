@@ -25,8 +25,10 @@ Paying people means withholding and filing taxes, issuing W-2s, moving money by 
 ## Not building
 Tax withholding, tax filing, pay stubs, W-2s, ACH, storing bank details, tip pooling.
 
-## Open questions for Tegan
-- Which payroll provider will Evergreen and its clients use? This picks the export layout.
-- Hourly only, or salaried people too?
-- Should employees see their own estimated pay, or only managers?
-- Tips and commission (salon use) in v1, or later?
+## Decisions (2026-11-13)
+- Provider: Gusto is the default recommendation (Simple plan was $49 a month plus $6 per person in 2026, single state). Its payroll import reads a CSV with names and regular, overtime and double overtime hours, so one generic export works. Any provider that imports a CSV can use it.
+- Hourly and salary both supported. No tips or commission in v1.
+- Pay rates are private to owners. Managers cannot see them.
+- Estimates are optional per business (off by default), since they do not fit every business. A second switch lets each person see only their own.
+- The hours export carries no rates, so a manager can run it.
+- Juniper never stores bank or routing numbers.

@@ -125,6 +125,10 @@ export function TimeRulesForm({ initial, disabled }: { initial: WorkspaceSetting
               mealStartBy: Math.round(Number(o.mealStartByHours) * 60),
               mealUnpaid: o.mealUnpaid === "on",
               trackRestBreaks: o.trackRestBreaks === "on",
+              showPayEstimates: o.showPayEstimates === "on",
+              employeesSeeOwnPay: o.employeesSeeOwnPay === "on",
+              payrollName: o.payrollName ?? "",
+              payrollUrl: o.payrollUrl ?? "",
             },
           }),
         );
@@ -152,6 +156,16 @@ export function TimeRulesForm({ initial, disabled }: { initial: WorkspaceSetting
         </div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="mealUnpaid" defaultChecked={initial.mealUnpaid} /> Meal breaks are unpaid</label>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="trackRestBreaks" defaultChecked={initial.trackRestBreaks} /> Flag shifts with fewer punched rest breaks than expected (one per 4 hours)</label>
+        <div className="space-y-2 border-t border-line pt-3">
+          <p className="text-sm font-semibold">Pay</p>
+          <p className="text-xs text-muted">Juniper does not run payroll or hold bank details. Use a payroll provider for paychecks and direct deposit. Pay rates are set by an owner on the Pay page and are private.</p>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="showPayEstimates" defaultChecked={initial.showPayEstimates} /> Show estimated pay on timesheets (owners)</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="employeesSeeOwnPay" defaultChecked={initial.employeesSeeOwnPay} /> Let each person see their own estimate</label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block"><span className="label">Payroll provider name</span><input name="payrollName" className="input" defaultValue={initial.payrollName} placeholder="Gusto" maxLength={60} /></label>
+            <label className="block"><span className="label">Payroll sign-in link</span><input name="payrollUrl" type="url" className="input" defaultValue={initial.payrollUrl} placeholder="https://" maxLength={300} /></label>
+          </div>
+        </div>
         <button className="btn btn-primary btn-sm" disabled={pending}>Save</button>
       </fieldset>
     </form>
