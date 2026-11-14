@@ -36,7 +36,7 @@ const { sendEmail } = await import("../email");
 const { saveProduct, onHandFor } = await import("./products");
 const { saveHelcimConnection, saveHelcimDevice, loadHelcimSettings } = await import("./helcim-connection");
 const { resolveCardTransaction } = await import("./helcim-payments");
-const { emailReceipt, reapStalePayments, abandonPayment, cancelOrder, chargeCard, createOrder, getOrder, payWithCash, taxFor } = await import("./orders");
+const { fulfillOrder, listOrdersForStaff, resolveReview, emailReceipt, reapStalePayments, abandonPayment, cancelOrder, chargeCard, createOrder, getOrder, payWithCash, taxFor } = await import("./orders");
 type Ctx = import("./ctx").Ctx;
 
 async function seed(slug: string, taxRatePercent = 0) {
@@ -250,5 +250,41 @@ describe("emailReceipt", () => {
     expect((await getOrder(ctx, o.id))!.order.customerEmail).toBe("ana@x.test");
     // Second send reuses the saved address.
     await emailReceipt(ctx, { orderId: o.id });
+  });
+});
+
+describe("staff orders list", () => {
+  it("shows paid online orders and flagged payments under attention, and lets staff finish them", async () => {
+    const { ctx, ws, game } = await seed("shop-a");
+    const deviceId = await withDevice(ctx);
+    // A cash sale: nothing to do.
+    const cash = await createOrder(ctx, { items: [{ productId: game, quantity: 1 }] });
+    await payWithCash(ctx, { orderId: cash.id });
+    expect((await listOrdersForStaff(ctx, "attention")).length).toBe(0);
+    // A card sale whose approved amount differs: flagged for review.
+    const card = await createOrder(ctx, { items: [{ productId: game, quantity: 1 }] });
+    await chargeCard(ctx, { orderId: card.id, deviceId }, ok());
+    await resolveCardTransaction(ws.id, { transactionId: "odd1", status: "approved", amountCents: 1, invoiceNumber: String(card.orderNumber), deviceCode: "AB12", raw: {} } as never, new Date());
+    const att = await listOrdersForStaff(ctx, "attention");
+    expect(att.length).toBe(1);
+    expect(att[0]!.payment).toMatchObject({ needsReview: true });
+    await expect(resolveReview(ctx, { paymentId: att[0]!.payment!.id, note: "" })).rejects.toThrow();
+    await resolveReview(ctx, { paymentId: att[0]!.payment!.id, note: "Checked in Helcim, amount is right" });
+    expect((await listOrdersForStaff(ctx, "attention")).length).toBe(0);
+    await expect(resolveReview(ctx, { paymentId: att[0]!.payment!.id, note: "again" })).rejects.toThrow(/not waiting/);
+    expect((await listOrdersForStaff(ctx, "all")).length).toBe(2);
+    expect((await listOrdersForStaff(ctx, "open")).length).toBe(1);
+  });
+
+  it("marks paid orders done once, never unpaid ones, and keeps businesses apart", async () => {
+    const a = await seed("shop-a");
+    const b = await seed("shop-b");
+    const o = await createOrder(a.ctx, { items: [{ productId: a.game, quantity: 1 }] });
+    await expect(fulfillOrder(a.ctx, { orderId: o.id })).rejects.toThrow(/paid order/);
+    await payWithCash(a.ctx, { orderId: o.id });
+    await expect(fulfillOrder(b.ctx, { orderId: o.id })).rejects.toThrow(/paid order/);
+    await fulfillOrder(a.ctx, { orderId: o.id });
+    await expect(fulfillOrder(a.ctx, { orderId: o.id })).rejects.toThrow(/paid order/);
+    expect((await listOrdersForStaff(b.ctx, "all")).length).toBe(0);
   });
 });

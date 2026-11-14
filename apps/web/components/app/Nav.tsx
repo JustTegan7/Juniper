@@ -13,6 +13,7 @@ const ICONS = {
   timesheets: IconSheet,
   services: IconScissors,
   register: IconCart,
+  orders: IconSheet,
   products: IconBox,
   team: IconTeam,
   settings: IconGear,
