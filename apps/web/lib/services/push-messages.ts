@@ -50,3 +50,10 @@ export function timeOffRequestedText(p: { name: string; startDay: string; endDay
 export function timeOffDecisionText(p: { decision: "approved" | "denied"; startDay: string; endDay: string }): PushText {
   return { title: p.decision === "approved" ? "Time off approved" : "Time off denied", body: `Your request for ${rangeText(p.startDay, p.endDay)} was ${p.decision}.` };
 }
+
+/** Never includes the message itself, since it can show on a lock screen. */
+export function newMessageText(p: { senderName: string; conversationTitle: string | null; isReply: boolean }): PushText {
+  const who = firstName(p.senderName);
+  const what = p.isReply ? "replied" : "sent a message";
+  return p.conversationTitle ? { title: p.conversationTitle, body: `${who} ${what}` } : { title: who, body: p.isReply ? "Replied in a thread" : "Sent you a message" };
+}

@@ -6,7 +6,7 @@ import { db } from "../db";
 import { getExpoReceipts, sendExpoMessages, type ExpoMessage } from "../expo-push";
 import { clientCancelledText, newBookingText, timeOffDecisionText, timeOffRequestedText } from "./push-messages";
 
-export type PushKind = "bookings" | "timeOff";
+export type PushKind = "bookings" | "timeOff" | "messages";
 
 export interface PushInput {
   workspaceId: string;
@@ -32,7 +32,8 @@ export async function sendPush(input: PushInput): Promise<number> {
   try {
     const ids = [...new Set(input.membershipIds)];
     if (!ids.length) return 0;
-    const wants = input.kind === "bookings" ? memberships.pushBookings : memberships.pushTimeOff;
+    const wants =
+      input.kind === "bookings" ? memberships.pushBookings : input.kind === "messages" ? memberships.pushMessages : memberships.pushTimeOff;
     const rows = await db()
       .select({ id: pushTokens.id, token: pushTokens.token })
       .from(pushTokens)

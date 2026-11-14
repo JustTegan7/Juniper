@@ -8,6 +8,7 @@ import * as appts from "../../lib/services/appointments";
 import * as catalog from "../../lib/services/catalog";
 import * as clients from "../../lib/services/clients";
 import * as helcim from "../../lib/services/helcim-connection";
+import * as chat from "../../lib/services/messages";
 import * as hours from "../../lib/services/hours";
 import * as orders from "../../lib/services/orders";
 import * as products from "../../lib/services/products";
@@ -123,4 +124,32 @@ export async function switchWorkspaceAction(workspaceId: string) {
   (await cookies()).set(ACTIVE_WORKSPACE_COOKIE, workspaceId, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 365 });
   revalidatePath("/", "layout");
   return { ok: true, message: "Switched." } as ActionResult;
+}
+
+// Team chat
+export const startDirectAction = async (input: unknown) => run((c) => chat.startDirect(c, input));
+export const createGroupAction = async (input: unknown) => run((c) => chat.createGroup(c, input));
+export const addGroupMembersAction = async (input: unknown) => run((c) => chat.addGroupMembers(c, input));
+export const removeGroupMemberAction = async (input: unknown) => run((c) => chat.removeGroupMember(c, input));
+export const sendMessageAction = async (input: unknown) => run((c) => chat.sendMessage(c, input));
+export const deleteMessageAction = async (input: unknown) => run((c) => chat.deleteMessage(c, input));
+export const setMutedAction = async (input: unknown) => run((c) => chat.setMuted(c, input));
+
+/** Polling reads. These return data, not a message, and skip the page refresh. */
+export async function pollChatAction(conversationId: string | null, parentId: string | null) {
+  const ctx = await getCtx();
+  try {
+    const conversations = await chat.listConversations(ctx);
+    let msgs: Awaited<ReturnType<typeof chat.listMessages>> = [];
+    let thread: Awaited<ReturnType<typeof chat.listMessages>> = [];
+    if (conversationId && conversations.some((c) => c.id === conversationId)) {
+      msgs = await chat.listMessages(ctx, { conversationId });
+      if (parentId) thread = await chat.listMessages(ctx, { conversationId, parentId });
+      await chat.markRead(ctx, { conversationId });
+    }
+    return { ok: true as const, conversations, messages: msgs, thread };
+  } catch (e) {
+    console.error(e);
+    return { ok: false as const };
+  }
 }

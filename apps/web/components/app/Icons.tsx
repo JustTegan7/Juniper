@@ -17,3 +17,4 @@ export const IconChevronRight = () => <svg {...P}><path d="m9 18 6-6-6-6" /></sv
 export const IconX = () => <svg {...P}><path d="M18 6 6 18M6 6l12 12" /></svg>;
 export const IconCart = () => <svg {...P}><circle cx="9" cy="20" r="1.5" /><circle cx="18" cy="20" r="1.5" /><path d="M2 3h3l2.7 12.4a1 1 0 0 0 1 .8h9a1 1 0 0 0 1-.8L21 7H6" /></svg>;
 export const IconBox = () => <svg {...P}><path d="M21 8 12 3 3 8v8l9 5 9-5z" /><path d="m3 8 9 5 9-5M12 13v8" /></svg>;
+export const IconChat = () => <svg {...P}><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>;
