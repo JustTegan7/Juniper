@@ -93,7 +93,7 @@ export async function createBusiness(raw: unknown) {
 
   const d = db();
   await batch([
-    d.insert(workspaces).values({ id: wsId, name: input.name, slug, timezone: input.timezone, template: input.industry, settings: {} }),
+    d.insert(workspaces).values({ id: wsId, name: input.name, slug, timezone: input.timezone, template: input.industry, settings: preset.settings ?? {} }),
     d.insert(businessHours).values(hours),
     ...(cats.size
       ? [d.insert(serviceCategories).values([...cats.entries()].map(([name, id], i) => ({ id, workspaceId: wsId, name, sortOrder: i })))]

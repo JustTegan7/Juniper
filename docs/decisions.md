@@ -164,3 +164,6 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - Web polls every 5 seconds while the tab is visible; no websockets. Revisit if it feels slow.
 - Push text never includes message content. Muted conversations get no push and do not add to the badge.
 - Phone screens and the global message-push toggle wait for the app step.
+
+## Retail industry (2026-11-13)
+- New industry `retail` for stores with no appointments (first client: ReLoved Gaming). New businesses start with booking off and the shop on. Today redirects to the Register, and Calendar and Services are hidden. Time clock, team, messages and customers stay.
