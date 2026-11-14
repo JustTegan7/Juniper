@@ -176,7 +176,10 @@ export async function confirmOnlinePayment(slug: string, raw: unknown, now = new
     return { ok: false as const, message: "We could not confirm your payment. If your card was charged, contact the shop with your order number." };
   };
 
-  const shape = responseShape.safeParse(input.data.response);
+  // Helcim's docs show the result both as { hash, data } and wrapped as { status, data: { hash, data } }. Accept either.
+  const r0 = input.data.response as { data?: { hash?: unknown; data?: unknown } } | null;
+  const unwrapped = r0 && typeof r0 === "object" && r0.data && typeof r0.data === "object" && "hash" in r0.data && "data" in r0.data ? r0.data : input.data.response;
+  const shape = responseShape.safeParse(unwrapped);
   const secretEnc = (payment.raw as { secretTokenEnc?: string } | null)?.secretTokenEnc;
   if (!shape.success || !secretEnc) return flag("unreadable result");
   if (!verifyPayHash(shape.data, decryptSecret(secretEnc))) return flag("hash did not match");

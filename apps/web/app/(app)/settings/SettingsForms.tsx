@@ -281,12 +281,18 @@ function DeviceRow({ device }: { device?: HelcimSettings["devices"][number] }) {
 export function ShopForm({ initial }: { initial: WorkspaceSettings["shop"] }) {
   const { act, pending } = useAct();
   return (
-    <form className="grid gap-3 sm:grid-cols-3" action={(f) => act(() => updateSettingsAction({ section: "shop", values: { enabled: f.get("enabled") === "on", taxRatePercent: Number(f.get("taxRatePercent") || 0) } }))}>
+    <form className="grid gap-3 sm:grid-cols-3" action={(f) => act(() => updateSettingsAction({ section: "shop", values: { enabled: f.get("enabled") === "on", onlineEnabled: f.get("onlineEnabled") === "on", taxRatePercent: Number(f.get("taxRatePercent") || 0), shippingFlatCents: Math.round(Number(f.get("shipping") || 0) * 100) } }))}>
       <label className="flex items-center gap-2 sm:pt-6"><input name="enabled" type="checkbox" defaultChecked={initial.enabled} /><span>Sell products</span></label>
       <label className="block">
         <span className="label">Sales tax rate (%)</span>
         <input name="taxRatePercent" type="number" step="0.01" min={0} max={15} className="input" defaultValue={initial.taxRatePercent} />
         <span className="mt-1 block text-xs text-muted">Added to product sales at the register. Confirm the rate for your location with your accountant.</span>
+      </label>
+      <label className="flex items-center gap-2"><input name="onlineEnabled" type="checkbox" defaultChecked={initial.onlineEnabled} /><span>Open the online shop</span></label>
+      <label className="block">
+        <span className="label">Flat shipping ($)</span>
+        <input name="shipping" type="number" step="0.01" min={0} max={1000} className="input" defaultValue={(initial.shippingFlatCents / 100).toFixed(2)} />
+        <span className="mt-1 block text-xs text-muted">Charged once on online orders that ship. Needs Helcim connected.</span>
       </label>
       <div className="flex items-end"><button className="btn btn-primary btn-sm" disabled={pending}>Save</button></div>
     </form>

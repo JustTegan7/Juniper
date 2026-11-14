@@ -137,6 +137,14 @@ describe("confirmOnlinePayment", () => {
     expect((await onHandFor(a.ws.id, [a.game]))[a.game]).toBe(1);
   });
 
+  it("accepts the result wrapped in a status envelope", async () => {
+    const a = await seed("shop-a");
+    const { f, sign } = fakeHelcim();
+    const s = await startOnlineCheckout("shop-a", cart(a.game), f);
+    const r = await confirmOnlinePayment("shop-a", { checkoutToken: s.checkoutToken, response: { status: 200, data: sign(s.checkoutToken, approved("22.00")) } });
+    expect(r.ok).toBe(true);
+  });
+
   it("accepts the slash-escaped hash variant", async () => {
     const a = await seed("shop-a");
     const { f, sign } = fakeHelcim();
