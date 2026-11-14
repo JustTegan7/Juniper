@@ -26,7 +26,7 @@ export async function updateBusiness(ctx: Ctx, raw: unknown) {
   return { message: "Business details saved." };
 }
 
-const sections = ["booking", "time", "contact", "vocabulary"] as const;
+const sections = ["booking", "time", "contact", "vocabulary", "shop"] as const;
 type Section = (typeof sections)[number];
 
 /** Saves one section of the business settings. Unknown fields are dropped; defaults fill gaps. */

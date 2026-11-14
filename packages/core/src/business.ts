@@ -157,6 +157,15 @@ export const workspaceSettingsSchema = z.object({
       payPeriodAnchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).default("2026-01-04"),
     })
     .prefault({}),
+  /** Register and online shop settings. */
+  shop: z
+    .object({
+      /** Turns on Products and the Register. Off for businesses that only book appointments. */
+      enabled: z.boolean().default(false),
+      /** Sales tax added to product sales, in percent. Zero means no tax is added. */
+      taxRatePercent: z.number().min(0).max(15).default(0),
+    })
+    .prefault({}),
   contact: z
     .object({
       phone: z.string().max(40).default(""),

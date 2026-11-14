@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconCalendar, IconClock, IconGear, IconHome, IconMore, IconScissors, IconSheet, IconSun2, IconTeam, IconUsers } from "./Icons";
+import { IconBox, IconCalendar, IconCart, IconClock, IconGear, IconHome, IconMore, IconScissors, IconSheet, IconSun2, IconTeam, IconUsers } from "./Icons";
 
 const ICONS = {
   home: IconHome,
@@ -12,6 +12,8 @@ const ICONS = {
   timeoff: IconSun2,
   timesheets: IconSheet,
   services: IconScissors,
+  register: IconCart,
+  products: IconBox,
   team: IconTeam,
   settings: IconGear,
   more: IconMore,

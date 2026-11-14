@@ -12,6 +12,7 @@ export default async function MorePage() {
   const links = [
     { href: "/time-off", label: "Time off" },
     { href: "/timesheets", label: "Timesheets" },
+    ...(ctx.workspace.settings.shop.enabled ? [{ href: "/register", label: "Register" }, ...(isManager(ctx.role) ? [{ href: "/products", label: "Products" }] : [])] : []),
     ...(isManager(ctx.role)
       ? [
           { href: "/services", label: v.servicePlural },

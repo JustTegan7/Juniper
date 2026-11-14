@@ -109,3 +109,9 @@ export async function saveHelcimDevice(ctx: Ctx, raw: unknown) {
   await d.insert(auditLog).values(auditRow(actorOf(ctx), "helcim_device", row!.id, "created", undefined, values));
   return { message: "Device added.", id: row!.id };
 }
+
+/** Active devices only, for the register. Open to the whole team and never includes tokens. */
+export async function loadHelcimSettingsForRegister(ctx: Ctx) {
+  const s = await loadHelcimSettings(ctx);
+  return s.devices.filter((x) => x.active).map((x) => ({ id: x.id, label: x.label, kind: x.kind }));
+}
