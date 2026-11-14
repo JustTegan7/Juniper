@@ -8,6 +8,8 @@ import { decryptSecret } from "../helcim/crypto";
 import { HelcimError, newIdempotencyKey, startPurchase } from "../helcim/client";
 import { actorOf, type Ctx } from "./ctx";
 import { onHandFor } from "./products";
+import { buildReceipt } from "../receipt";
+import { sendEmail } from "../email";
 
 /** Register work is open to the whole team. Orders and payments are always scoped to the business in ctx. */
 
@@ -229,4 +231,33 @@ export async function reapStalePayments(workspaceId: string, now = new Date(), m
   await d.update(orders).set({ status: "draft" }).where(and(eq(orders.workspaceId, workspaceId), inArray(orders.id, stale.map((x) => x.orderId)), eq(orders.status, "awaiting_payment")));
   await d.insert(auditLog).values(stale.map((x) => auditRow({ workspaceId, userId: null, label: "System" }, "payment", x.id, "timed_out", { status: "pending" }, { status: "timed_out" })));
   return stale.length;
+}
+
+/**
+ * Emails the receipt for a paid order. Used by the register ("Email receipt") and automatically for online orders.
+ * If an address is given it is saved on the order. Returns false when email is not set up or fails.
+ */
+export async function sendOrderReceipt(workspaceId: string, orderId: string, biz: { name: string; timezone: string; phone?: string; address?: string }, emailOverride?: string): Promise<{ sent: boolean; reason?: string }> {
+  const d = db();
+  const [order] = await d.select().from(orders).where(and(eq(orders.id, orderId), eq(orders.workspaceId, workspaceId)));
+  if (!order) return { sent: false, reason: "That order was not found." };
+  if (order.status !== "paid" && order.status !== "fulfilled") return { sent: false, reason: "Only a paid order has a receipt." };
+  const email = emailOverride ? z.email().safeParse(emailOverride.trim()) : null;
+  if (emailOverride && !email?.success) return { sent: false, reason: "That email does not look right." };
+  const to = email?.success ? email.data : order.customerEmail;
+  if (!to) return { sent: false, reason: "Add an email address for the receipt." };
+  if (email?.success && email.data !== order.customerEmail) await d.update(orders).set({ customerEmail: email.data }).where(eq(orders.id, order.id));
+  const items = await d.select().from(orderItems).where(and(eq(orderItems.orderId, order.id), eq(orderItems.workspaceId, workspaceId)));
+  const { subject, text } = buildReceipt({ ...order, shipTo: order.shipTo as never }, items, biz);
+  const ok = await sendEmail({ to, subject, text });
+  await d.insert(auditLog).values(auditRow({ workspaceId, userId: null, label: "Receipts" }, "order", order.id, ok ? "receipt_emailed" : "receipt_failed", undefined, { to }));
+  return ok ? { sent: true } : { sent: false, reason: "The receipt could not be sent right now." };
+}
+
+export async function emailReceipt(ctx: Ctx, raw: unknown) {
+  const { orderId, email } = z.object({ orderId: z.uuid(), email: z.string().trim().max(200).optional() }).parse(raw);
+  const w = ctx.workspace as unknown as { name?: string; timezone?: string; settings: { contact?: { phone?: string; address?: string } } };
+  const r = await sendOrderReceipt(ctx.workspace.id, orderId, { name: w.name ?? "Our shop", timezone: w.timezone ?? "America/Los_Angeles", phone: w.settings.contact?.phone, address: w.settings.contact?.address }, email || undefined);
+  if (!r.sent) throw new Error(r.reason ?? "The receipt could not be sent.");
+  return { message: "Receipt emailed." };
 }

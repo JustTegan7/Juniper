@@ -8,7 +8,7 @@ import { decryptSecret, encryptSecret } from "../helcim/crypto";
 import { HelcimError, initializeHelcimPay, verifyPayHash } from "../helcim/client";
 import { loadBusinessBySlug } from "./public";
 import { onHandFor } from "./products";
-import { taxFor } from "./orders";
+import { sendOrderReceipt, taxFor } from "./orders";
 
 // The public online shop. Nothing here trusts the browser except the slug, the cart and what the customer typed.
 // Prices, tax, shipping and stock come from the database. Payment is only believed after the HelcimPay.js hash checks out.
@@ -204,5 +204,7 @@ export async function confirmOnlinePayment(slug: string, raw: unknown, now = new
     d.insert(stockMovements).values(items.map((i) => ({ workspaceId: ws.id, productId: i.productId, delta: -i.quantity, reason: "online_sale" as const, orderId: order.id, note: "Online order paid" }))).onConflictDoNothing(),
     d.insert(auditLog).values(auditRow(system(ws.id), "payment", payment.id, oversold ? "approved_oversold" : "approved", { status: "pending" }, { status: "approved", orderId: order.id })),
   ]);
+  // Best effort. A failed email never undoes a paid order.
+  await sendOrderReceipt(ws.id, order.id, { name: ws.name, timezone: ws.timezone, phone: ws.settings.contact.phone, address: ws.settings.contact.address }).catch((e) => console.error("Receipt failed", e));
   return { ok: true, orderNumber: order.orderNumber };
 }

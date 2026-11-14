@@ -51,6 +51,7 @@ export const createOrderAction = async (input: unknown) => run((c) => orders.cre
 export const payWithCashAction = async (input: unknown) => run((c) => orders.payWithCash(c, input));
 export const chargeCardAction = async (input: unknown) => run((c) => orders.chargeCard(c, input));
 export const abandonPaymentAction = async (input: unknown) => run((c) => orders.abandonPayment(c, input));
+export const emailReceiptAction = async (input: unknown) => run((c) => orders.emailReceipt(c, input));
 export const cancelOrderAction = async (input: unknown) => run((c) => orders.cancelOrder(c, input));
 /** Polled by the register while a card payment is waiting. Does not refresh the page. */
 export async function orderStatusAction(orderId: string) {
