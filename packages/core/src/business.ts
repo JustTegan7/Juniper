@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { WA_TIME_RULES } from "./timesheet";
 
-export const INDUSTRIES = ["salon", "barber", "spa", "nails", "fitness", "wellness", "pet", "general"] as const;
+export const INDUSTRIES = ["salon", "barber", "spa", "nails", "fitness", "wellness", "pet", "general", "retail"] as const;
 export type Industry = (typeof INDUSTRIES)[number];
 
 export interface Vocabulary {
@@ -32,6 +32,10 @@ const base: Vocabulary = {
 export interface IndustryPreset {
   label: string;
   vocabulary: Vocabulary;
+  /** Settings a new business of this kind starts with. */
+  settings?: Record<string, unknown>;
+  /** Appointment screens (Today, Calendar, Services) are hidden. */
+  noAppointments?: boolean;
   /** Starter menu offered when a business is created. Prices in cents, times in minutes. */
   starterServices: {
     category: string;
@@ -96,6 +100,13 @@ export const INDUSTRY_PRESETS: Record<Industry, IndustryPreset> = {
     label: "Pet grooming",
     vocabulary: { ...base, staff: "Groomer", staffPlural: "Groomers" },
     starterServices: [{ category: "Grooming", name: "Bath and brush", activeBefore: 60, priceCents: 6000, priceFrom: true }],
+  },
+  retail: {
+    label: "Retail or online store (no appointments)",
+    vocabulary: { ...base, client: "Customer", clientPlural: "Customers" },
+    settings: { booking: { enabled: false }, shop: { enabled: true } },
+    noAppointments: true,
+    starterServices: [],
   },
   general: { label: "Other appointment business", vocabulary: base, starterServices: [] },
 };
@@ -248,4 +259,9 @@ export function normalizeOrigin(v: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** True for businesses that sell products and do not take appointments. */
+export function isRetail(template: string): boolean {
+  return isIndustry(template) && INDUSTRY_PRESETS[template].noAppointments === true;
 }

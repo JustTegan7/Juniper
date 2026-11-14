@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { and, count, eq, isNull } from "drizzle-orm";
 import { timeOff } from "@evergreen/db";
-import { isManager } from "@evergreen/core";
+import { isManager, isRetail } from "@evergreen/core";
 import { getCtx } from "../../lib/services/ctx";
 import { db } from "../../lib/db";
 import { loadMembers } from "../../lib/services/workspace";
@@ -29,18 +29,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const shopNav: NavItem[] = ctx.workspace.settings.shop.enabled
     ? [{ href: "/register", label: "Register", icon: "register" }, ...(manager ? [{ href: "/products", label: "Products", icon: "products" } as NavItem] : [])]
     : [];
+  const retail = isRetail(ctx.workspace.template);
   const nav: NavItem[] = [
-    { href: "/today", label: "Today", icon: "home" },
-    { href: "/calendar", label: "Calendar", icon: "calendar" },
+    ...(retail ? shopNav : [{ href: "/today", label: "Today", icon: "home" } as NavItem, { href: "/calendar", label: "Calendar", icon: "calendar" } as NavItem]),
     { href: "/messages", label: "Messages", icon: "chat", badge: unread || undefined },
     { href: "/clients", label: v.clientPlural, icon: "clients" },
     { href: "/clock", label: "Time clock", icon: "clock" },
     { href: "/time-off", label: "Time off", icon: "timeoff", badge: Number(pending[0]?.n ?? 0) || undefined },
     { href: "/timesheets", label: "Timesheets", icon: "timesheets" },
-    ...shopNav,
+    ...(retail ? [] : shopNav),
     ...(manager
       ? ([
-          { href: "/services", label: v.servicePlural, icon: "services" },
+          ...(retail ? [] : [{ href: "/services", label: v.servicePlural, icon: "services" } as NavItem]),
           { href: "/team", label: "Team", icon: "team" },
           { href: "/settings", label: "Settings", icon: "settings" },
         ] satisfies NavItem[])
