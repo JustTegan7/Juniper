@@ -14,6 +14,7 @@ const pg = new PGlite({ extensions: { btree_gist } });
 const testDb = drizzle(pg);
 
 vi.mock("server-only", () => ({}));
+vi.mock("../email", () => ({ sendEmail: vi.fn(async () => true) }));
 vi.mock("../db", () => ({
   db: () => testDb,
   batch: async (items: PromiseLike<unknown>[]) => {
@@ -31,6 +32,7 @@ vi.mock("../db", () => ({
 }));
 
 const { createBusiness } = await import("./workspace");
+const { sendEmail } = await import("../email");
 const { saveProduct, onHandFor, adjustStock } = await import("./products");
 const { saveHelcimConnection } = await import("./helcim-connection");
 const { helcimJson } = await import("../helcim/client");
@@ -135,6 +137,10 @@ describe("confirmOnlinePayment", () => {
     expect(await confirmOnlinePayment("shop-a", { checkoutToken: s.checkoutToken, response })).toEqual({ ok: true, orderNumber: s.orderNumber });
     expect((await testDb.select().from(orders).where(eq(orders.workspaceId, a.ws.id)))[0]).toMatchObject({ status: "paid" });
     expect((await onHandFor(a.ws.id, [a.game]))[a.game]).toBe(1);
+    const calls = (sendEmail as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const mine = calls.filter((c) => (c[0] as { to: string }).to === "ana@x.test");
+    expect(mine.length).toBe(1);
+    expect((mine[0]![0] as { text: string }).text).toContain("This order is for pickup");
   });
 
   it("accepts the result wrapped in a status envelope", async () => {

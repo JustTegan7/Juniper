@@ -14,6 +14,7 @@ const pg = new PGlite({ extensions: { btree_gist } });
 const testDb = drizzle(pg);
 
 vi.mock("server-only", () => ({}));
+vi.mock("../email", () => ({ sendEmail: vi.fn(async () => true) }));
 vi.mock("../db", () => ({
   db: () => testDb,
   batch: async (items: PromiseLike<unknown>[]) => {
@@ -31,10 +32,11 @@ vi.mock("../db", () => ({
 }));
 
 const { createBusiness } = await import("./workspace");
+const { sendEmail } = await import("../email");
 const { saveProduct, onHandFor } = await import("./products");
 const { saveHelcimConnection, saveHelcimDevice, loadHelcimSettings } = await import("./helcim-connection");
 const { resolveCardTransaction } = await import("./helcim-payments");
-const { reapStalePayments, abandonPayment, cancelOrder, chargeCard, createOrder, getOrder, payWithCash, taxFor } = await import("./orders");
+const { emailReceipt, reapStalePayments, abandonPayment, cancelOrder, chargeCard, createOrder, getOrder, payWithCash, taxFor } = await import("./orders");
 type Ctx = import("./ctx").Ctx;
 
 async function seed(slug: string, taxRatePercent = 0) {
@@ -228,5 +230,25 @@ describe("reapStalePayments", () => {
     await chargeCard(a.ctx, { orderId: o.id, deviceId }, ok());
     expect(await reapStalePayments(b.ws.id, new Date(Date.now() + 60 * 60_000))).toBe(0);
     expect((await getOrder(a.ctx, o.id))!.order.status).toBe("awaiting_payment");
+  });
+});
+
+describe("emailReceipt", () => {
+  it("emails a paid order, saves the address, and refuses unpaid orders and bad emails", async () => {
+    const { ctx, game } = await seed("shop-a", 10);
+    const o = await createOrder(ctx, { items: [{ productId: game, quantity: 2 }] });
+    await expect(emailReceipt(ctx, { orderId: o.id, email: "ana@x.test" })).rejects.toThrow(/paid order/);
+    await payWithCash(ctx, { orderId: o.id });
+    await expect(emailReceipt(ctx, { orderId: o.id })).rejects.toThrow(/email address/);
+    await expect(emailReceipt(ctx, { orderId: o.id, email: "nope" })).rejects.toThrow(/does not look right/);
+    await emailReceipt(ctx, { orderId: o.id, email: "ana@x.test" });
+    const call = (sendEmail as unknown as ReturnType<typeof vi.fn>).mock.calls.at(-1)![0] as { to: string; subject: string; text: string };
+    expect(call.to).toBe("ana@x.test");
+    expect(call.subject).toContain(`order ${o.orderNumber}`);
+    expect(call.text).toContain("2 x Game (G1)");
+    expect(call.text).toContain("Total paid: $44.00");
+    expect((await getOrder(ctx, o.id))!.order.customerEmail).toBe("ana@x.test");
+    // Second send reuses the saved address.
+    await emailReceipt(ctx, { orderId: o.id });
   });
 });

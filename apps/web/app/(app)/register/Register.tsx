@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { abandonPaymentAction, cancelOrderAction, chargeCardAction, createOrderAction, orderStatusAction, payWithCashAction } from "../actions";
+import { abandonPaymentAction, cancelOrderAction, emailReceiptAction, chargeCardAction, createOrderAction, orderStatusAction, payWithCashAction } from "../actions";
 import { useResultToast } from "../../../components/app/useAct";
 
 type P = { id: string; sku: string; name: string; priceCents: number; onHand: number };
@@ -134,6 +134,19 @@ export function Register({ products, devices, taxRatePercent, recent }: { produc
       <div className="card space-y-4 p-6 text-center">
         <p className="text-2xl font-bold">Paid</p>
         <p className="text-muted">Stock has been updated.</p>
+        <form
+          className="mx-auto flex max-w-sm gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!orderId) return;
+            setBusy(true);
+            show(await emailReceiptAction({ orderId, email: new FormData(e.currentTarget).get("email") }));
+            setBusy(false);
+          }}
+        >
+          <input name="email" type="email" className="input" placeholder="Customer email for a receipt" aria-label="Customer email" required />
+          <button className="btn btn-soft" disabled={busy}>Email receipt</button>
+        </form>
         <button className="btn btn-primary" onClick={newSale}>New sale</button>
       </div>
     );
