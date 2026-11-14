@@ -1,5 +1,5 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 // Thin typed wrapper over the Helcim calls Juniper needs. The caller passes the business's decrypted api token.
 // The partner token (HELCIM_PARTNER_TOKEN) rides on every call so revenue share is attributed.
@@ -107,4 +107,48 @@ export async function getCardTransaction(auth: HelcimAuth, transactionId: string
     deviceCode: typeof j.deviceCode === "string" ? j.deviceCode : null,
     raw: j,
   };
+}
+
+export interface InitializePayInput {
+  amountCents: number;
+  currency: string;
+  invoiceNumber: string;
+}
+
+/**
+ * Starts a HelcimPay.js checkout session. Must run on the server (the API rejects browser calls).
+ * The checkoutToken goes to the browser. The secretToken must never leave the server, it validates the result.
+ * Field names follow the HelcimPay.js docs. invoiceNumber on initialize is UNVERIFIED, confirm on test day.
+ */
+export async function initializeHelcimPay(auth: HelcimAuth, input: InitializePayInput, fetchImpl: Fetch = fetch): Promise<{ checkoutToken: string; secretToken: string }> {
+  let res: Response;
+  try {
+    res = await fetchImpl(`${BASE}/helcim-pay/initialize`, {
+      method: "POST",
+      headers: headers(auth, { "content-type": "application/json" }),
+      body: JSON.stringify({ paymentType: "purchase", amount: Number((input.amountCents / 100).toFixed(2)), currency: input.currency, invoiceNumber: input.invoiceNumber, language: "en" }),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new HelcimError("Card payments are not available right now. Try again in a moment.", 0, true);
+  }
+  if (!res.ok) throw new HelcimError("Card payments are not available right now. Try again in a moment.", res.status, true);
+  const json = (await res.json().catch(() => null)) as { checkoutToken?: unknown; secretToken?: unknown } | null;
+  if (!json || typeof json.checkoutToken !== "string" || typeof json.secretToken !== "string") throw new HelcimError("Card payments are not available right now. Try again in a moment.", res.status, true);
+  return { checkoutToken: json.checkoutToken, secretToken: json.secretToken };
+}
+
+/** JSON the way Helcim hashes it: compact, non-ASCII escaped as \uXXXX. Slash escaping is ambiguous in their docs, so callers try both. */
+export function helcimJson(data: unknown, escapeSlashes: boolean): string {
+  let out = JSON.stringify(data).replace(/[\u0080-\uffff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+  if (escapeSlashes) out = out.replace(/\//g, "\\/");
+  return out;
+}
+
+/** Checks a HelcimPay.js result against the secretToken. Fails closed. */
+export function verifyPayHash(response: unknown, secretToken: string): boolean {
+  if (!response || typeof response !== "object") return false;
+  const { hash, data } = response as { hash?: unknown; data?: unknown };
+  if (typeof hash !== "string" || !data || typeof data !== "object") return false;
+  return [false, true].some((esc) => createHash("sha256").update(helcimJson(data, esc) + secretToken).digest("hex") === hash.toLowerCase());
 }

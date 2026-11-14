@@ -162,6 +162,10 @@ export const workspaceSettingsSchema = z.object({
     .object({
       /** Turns on Products and the Register. Off for businesses that only book appointments. */
       enabled: z.boolean().default(false),
+      /** Public online shop at /shop/<slug>. Needs the shop on and Helcim connected. */
+      onlineEnabled: z.boolean().default(false),
+      /** One flat shipping charge per online order that ships, in cents. */
+      shippingFlatCents: z.number().int().min(0).max(100000).default(0),
       /** Sales tax added to product sales, in percent. Zero means no tax is added. */
       taxRatePercent: z.number().min(0).max(15).default(0),
     })
