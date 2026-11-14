@@ -180,3 +180,10 @@ Every architecture decision, with the reason. Claude reads this before changing 
 - If Helcim cannot be reached the refund stays pending. Stock does not move, nothing else can be refunded on that order, and the manager can retry (same key, so it cannot refund twice), record it as done by hand, or clear it, each with a note.
 - Returned items go back on the shelf by default. A manager can untick that for damaged goods. Returns are exempt from the one-row-per-order-and-product stock rule so an order can come back in several parts.
 - Unverified until test day: Helcim's refund field names, whether same-day refunds must be voids instead, and the IP address Helcim wants. The code fails closed.
+
+## Product photos (2026-11-13)
+- Photos are stored in Vercel Blob (public links, path `<workspaceId>/products/<id>.<ext>`) and the links are saved in `products.images`, same as before. Pasted https image links still work.
+- The browser shrinks each photo to 1600px JPEG before upload so it stays under Vercel's request size limit. The server accepts up to 2.5 MB and checks the file's first bytes, so only real JPEG, PNG or WebP files are stored (no SVG or HTML).
+- Owners and managers only. Needs `BLOB_READ_WRITE_TOKEN` (added when a Blob store is connected to the Vercel project). Without it the upload says so and the link box still works.
+- Removing a photo from a product does not delete the file from Blob. Orphans are tiny and harmless for v1.
+- Fixed: editing a product used to reset its images to none because the form never sent them.
