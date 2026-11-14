@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FLAG_LABELS, formatDay, formatHours, formatTimeIn, payPeriodFor } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { clockStatus, loadTimesheets } from "../../../lib/services/timeclock";
 import { ClockWidget } from "./ClockWidget";
 
@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: "Time clock" };
 
 export default async function ClockPage() {
   const ctx = await getCtx();
+  requireModule(ctx, "timeclock");
   const tz = ctx.workspace.timezone;
   const t = ctx.workspace.settings.time;
   const period = payPeriodFor(ctx.today, t.payPeriod, t.payPeriodAnchor);

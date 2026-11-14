@@ -9,14 +9,17 @@ export const metadata: Metadata = { title: "More" };
 export default async function MorePage() {
   const ctx = await getCtx();
   const v = ctx.workspace.vocab;
+  const m = ctx.workspace.modules;
+  const manager = isManager(ctx.role);
   const links = [
-    { href: "/messages", label: "Messages" },
-    { href: "/time-off", label: "Time off" },
-    { href: "/timesheets", label: "Timesheets" },
-    ...(ctx.workspace.settings.shop.enabled ? [{ href: "/register", label: "Register" }, { href: "/orders", label: "Orders" }, ...(isManager(ctx.role) ? [{ href: "/products", label: "Products" }] : [])] : []),
-    ...(isManager(ctx.role)
+    ...(m.appointments ? [{ href: "/calendar", label: "Calendar" }] : []),
+    ...(m.messages ? [{ href: "/messages", label: "Messages" }] : []),
+    ...(m.customers ? [{ href: "/clients", label: v.clientPlural }] : []),
+    ...(m.timeclock ? [{ href: "/clock", label: "Time clock" }, { href: "/time-off", label: "Time off" }, { href: "/timesheets", label: "Timesheets" }] : []),
+    ...(m.shop ? [{ href: "/register", label: "Register" }, { href: "/orders", label: "Orders" }, ...(manager ? [{ href: "/products", label: "Products" }] : [])] : []),
+    ...(manager
       ? [
-          { href: "/services", label: v.servicePlural },
+          ...(m.appointments ? [{ href: "/services", label: v.servicePlural }] : []),
           { href: "/team", label: "Team and schedules" },
           { href: "/settings", label: "Settings" },
         ]

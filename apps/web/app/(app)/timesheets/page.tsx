@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FLAG_LABELS, formatDay, formatHours, formatTimeIn, isManager, isYmd, nextPayPeriod, payPeriodFor, previousPayPeriod, toHm, utcToZoned } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { loadTimesheets } from "../../../lib/services/timeclock";
 import { loadMembers } from "../../../lib/services/workspace";
 import { EntryEditor } from "./EntryEditor";
@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: "Timesheets" };
 
 export default async function TimesheetsPage({ searchParams }: { searchParams: Promise<{ start?: string; person?: string }> }) {
   const ctx = await getCtx();
+  requireModule(ctx, "timeclock");
   const sp = await searchParams;
   const tz = ctx.workspace.timezone;
   const t = ctx.workspace.settings.time;

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { addDays, formatDay, isYmd } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { loadCalendarDay } from "../../../lib/services/appointments";
 import { loadCatalog, performers } from "../../../lib/services/catalog";
 import { CalendarView } from "./CalendarView";
@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: "Calendar" };
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ day?: string; book?: string }> }) {
   const ctx = await getCtx();
+  requireModule(ctx, "appointments");
   const sp = await searchParams;
   const day = sp.day && isYmd(sp.day) ? sp.day : ctx.today;
   const [cal, catalog] = await Promise.all([loadCalendarDay(ctx, day), loadCatalog(ctx.workspace.id)]);

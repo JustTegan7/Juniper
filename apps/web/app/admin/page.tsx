@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { INDUSTRIES, INDUSTRY_PRESETS } from "@evergreen/core";
+import { INDUSTRIES, INDUSTRY_PRESETS, modulesOf, parseSettings } from "@evergreen/core";
 import { Logo } from "../../components/Logo";
 import { isPlatformAdmin } from "../../lib/platform";
 import { getSession } from "../../lib/services/ctx";
 import { loadBusinessCounts } from "../../lib/services/admin";
 import { loadAllBusinesses } from "../../lib/services/workspace";
-import { CreateBusinessForm, DeleteBusiness, InviteOwner, SupportButton } from "./AdminForms";
+import { CreateBusinessForm, DeleteBusiness, InviteOwner, ModulesForm, SupportButton } from "./AdminForms";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -41,6 +41,7 @@ export default async function AdminPage() {
                 </p>
               </div>
               <InviteOwner workspaceId={w.id} />
+              <ModulesForm workspaceId={w.id} initial={modulesOf(w.template, parseSettings(w.settings))} />
               <SupportButton workspaceId={w.id} />
               <DeleteBusiness business={{ id: w.id, name: w.name, slug: w.slug }} counts={counts[w.id]} />
             </li>

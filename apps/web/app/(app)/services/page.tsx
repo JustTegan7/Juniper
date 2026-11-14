@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { formatDuration, formatPrice } from "@evergreen/core";
 import { redirect } from "next/navigation";
 import { isManager } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { loadCatalog } from "../../../lib/services/catalog";
 import { loadMembers } from "../../../lib/services/workspace";
 import { CategoryForm, ServiceForm } from "./ServiceForms";
@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Services" };
 
 export default async function ServicesPage() {
   const ctx = await getCtx();
+  requireModule(ctx, "appointments");
   // Owners and managers only. Team members go back to their day.
   if (!isManager(ctx.role)) redirect("/today");
   const [catalog, members] = await Promise.all([loadCatalog(ctx.workspace.id, { includeInactive: true }), loadMembers(ctx.workspace.id)]);

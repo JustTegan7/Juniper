@@ -1,5 +1,6 @@
 import "server-only";
 import { count, eq, inArray } from "drizzle-orm";
+import { parseSettings } from "@evergreen/core";
 import { z } from "zod";
 import { appointments, clients, memberships, services, timeEntries, workspaces } from "@evergreen/db";
 import { batch, db } from "../db";
@@ -104,4 +105,36 @@ export async function deleteBusiness(ctx: AdminCtx, raw: unknown) {
 
   console.warn(JSON.stringify({ event: "business_deleted", by: ctx.userId, workspaceId: ws.id, name: ws.name, slug: ws.slug, counts, at: new Date().toISOString() }));
   return { name: ws.name, slug: ws.slug, counts };
+}
+
+const modulesInput = z.object({
+  workspaceId: z.uuid(),
+  appointments: z.boolean(),
+  customers: z.boolean(),
+  timeclock: z.boolean(),
+  messages: z.boolean(),
+  shop: z.boolean(),
+});
+
+/**
+ * Turns parts of Juniper on or off for one business. Only Evergreen can do this, so a business
+ * cannot hide or show screens itself. Hidden screens redirect home; data is never deleted.
+ * Online booking follows the appointments switch.
+ */
+export async function setBusinessModules(ctx: AdminCtx, raw: unknown) {
+  assertPlatformAdmin(ctx);
+  const v = modulesInput.parse(raw);
+  const d = db();
+  const [ws] = await d.select({ id: workspaces.id, name: workspaces.name, settings: workspaces.settings }).from(workspaces).where(eq(workspaces.id, v.workspaceId)).limit(1);
+  if (!ws) throw new Error("That business no longer exists.");
+  const current = parseSettings(ws.settings);
+  const next = {
+    ...current,
+    modules: { appointments: v.appointments, customers: v.customers, timeclock: v.timeclock, messages: v.messages },
+    booking: { ...current.booking, enabled: v.appointments },
+    shop: { ...current.shop, enabled: v.shop, onlineEnabled: v.shop ? current.shop.onlineEnabled : false },
+  };
+  await d.update(workspaces).set({ settings: next, updatedAt: new Date() }).where(eq(workspaces.id, ws.id));
+  console.warn(JSON.stringify({ event: "modules_changed", by: ctx.userId, workspaceId: ws.id, modules: next.modules, shop: v.shop, at: new Date().toISOString() }));
+  return { name: ws.name };
 }

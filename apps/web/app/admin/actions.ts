@@ -9,7 +9,7 @@ import { db } from "../../lib/db";
 import { toResult } from "../../lib/action-result";
 import { isPlatformAdmin } from "../../lib/platform";
 import { ACTIVE_WORKSPACE_COOKIE, getSession } from "../../lib/services/ctx";
-import { deleteBusiness } from "../../lib/services/admin";
+import { deleteBusiness, setBusinessModules } from "../../lib/services/admin";
 import { issueInvite } from "../../lib/services/team";
 import { addMember, createBusiness } from "../../lib/services/workspace";
 
@@ -78,5 +78,14 @@ export async function deleteBusinessAction(raw: unknown) {
     const session = await requireAdmin();
     const r = await deleteBusiness({ userId: session.user.id, email: session.user.email }, raw);
     return { message: `${r.name} (/b/${r.slug}) was deleted.` };
+  });
+}
+
+/** Turns parts of the app on or off for a business. */
+export async function setModulesAction(raw: unknown) {
+  return toResult(async () => {
+    const session = await requireAdmin();
+    const r = await setBusinessModules({ userId: session.user.id, email: session.user.email }, raw);
+    return { message: `Saved for ${r.name}.` };
   });
 }

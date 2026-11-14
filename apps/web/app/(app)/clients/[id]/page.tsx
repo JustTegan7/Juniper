@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDay, formatPrice, isManager, formatTimeIn, STATUS_LABELS, utcToZoned } from "@evergreen/core";
-import { getCtx } from "../../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../../lib/services/ctx";
 import { clientName, formatPhone, getClient, getClientDeleteSummary } from "../../../../lib/services/clients";
 import { ClientActions } from "../ClientActions";
 
@@ -28,6 +28,7 @@ function Item({ h, tz }: { h: HistoryRow; tz: string }) {
 
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx();
+  requireModule(ctx, "customers");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const data = await getClient(ctx, id);

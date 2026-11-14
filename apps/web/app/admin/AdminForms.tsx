@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { slugify } from "@evergreen/core";
-import { createBusinessAction, deleteBusinessAction, inviteOwnerAction, joinForSupportAction } from "./actions";
+import { MODULE_LABELS, slugify, type Modules } from "@evergreen/core";
+import { createBusinessAction, deleteBusinessAction, inviteOwnerAction, joinForSupportAction, setModulesAction } from "./actions";
 import { Dialog } from "../../components/app/Dialog";
 import { formObject } from "../../lib/form";
 
@@ -136,5 +136,32 @@ export function DeleteBusiness({ business, counts }: { business: { id: string; n
         </form>
       </Dialog>
     </>
+  );
+}
+
+const MODULE_KEYS = ["appointments", "customers", "timeclock", "messages", "shop"] as const;
+
+/** Which parts of the app this business sees. Saves for that business only. */
+export function ModulesForm({ workspaceId, initial }: { workspaceId: string; initial: Modules }) {
+  const [open, setOpen] = useState(false);
+  const [m, setM] = useState<Modules>(initial);
+  const [r, setR] = useState<R | null>(null);
+  const [pending, start] = useTransition();
+  if (!open) return <button type="button" className="btn btn-soft btn-sm" onClick={() => setOpen(true)}>Features</button>;
+  return (
+    <form className="w-full space-y-2 rounded-lg border border-line p-3" action={() => start(async () => setR(await setModulesAction({ workspaceId, ...m })))}>
+      <p className="text-sm text-muted">What this business sees. Hidden parts keep their data and can be turned back on.</p>
+      {MODULE_KEYS.map((k) => (
+        <label key={k} className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={m[k]} onChange={(e) => setM({ ...m, [k]: e.target.checked })} />
+          {MODULE_LABELS[k]}
+        </label>
+      ))}
+      <div className="flex gap-2">
+        <button className="btn btn-primary btn-sm" disabled={pending}>Save</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Close</button>
+      </div>
+      <Result r={r} />
+    </form>
   );
 }

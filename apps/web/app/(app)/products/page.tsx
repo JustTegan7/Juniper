@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { isManager } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { listProducts } from "../../../lib/services/products";
 import { ProductManager } from "./ProductManager";
 
@@ -9,7 +9,8 @@ export const metadata: Metadata = { title: "Products" };
 
 export default async function ProductsPage() {
   const ctx = await getCtx();
-  if (!isManager(ctx.role) || !ctx.workspace.settings.shop.enabled) redirect("/today");
+  requireModule(ctx, "shop");
+  if (!isManager(ctx.role)) redirect("/today");
   const rows = await listProducts(ctx, { includeInactive: true });
   return (
     <div className="space-y-4">

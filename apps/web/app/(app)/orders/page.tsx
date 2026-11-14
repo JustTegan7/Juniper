@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { isManager } from "@evergreen/core";
-import { getCtx } from "../../../lib/services/ctx";
+import { getCtx, requireModule } from "../../../lib/services/ctx";
 import { listOrdersForStaff, type OrderFilter } from "../../../lib/services/orders";
 import { OrderList } from "./OrderList";
 
@@ -16,7 +15,7 @@ const TABS: { key: OrderFilter; label: string }[] = [
 
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
   const ctx = await getCtx();
-  if (!ctx.workspace.settings.shop.enabled) redirect("/today");
+  requireModule(ctx, "shop");
   const { show } = await searchParams;
   const filter: OrderFilter = show === "open" || show === "all" ? show : "attention";
   const rows = await listOrdersForStaff(ctx, filter);
