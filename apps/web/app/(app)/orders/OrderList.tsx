@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { emailReceiptAction, fulfillOrderAction, resolveReviewAction } from "../actions";
+import { useState } from "react";
+import { emailReceiptAction, fulfillOrderAction, refundOrderAction, resolvePendingRefundAction, resolveReviewAction, retryRefundAction } from "../actions";
+import { Dialog } from "../../../components/app/Dialog";
 import { useAct } from "../../../components/app/useAct";
 
 type Row = {
@@ -16,6 +18,8 @@ type Row = {
   shipTo: Record<string, string | null> | null;
   createdAt: string;
   items: { id: string; name: string; sku: string; quantity: number; unitPriceCents: number }[];
+  shippingCents: number;
+  refunds: { id: string; status: string; method: string; amountCents: number; shippingCents: number; reason: string; items: { orderItemId: string; quantity: number }[] }[];
   payment: { id: string; status: string; needsReview: boolean; reviewReason: string | null; tender: string | null } | null;
 };
 
@@ -36,6 +40,9 @@ function OrderCard({ o, canResolve }: { o: Row; canResolve: boolean }) {
   const { act, pending } = useAct();
   const done = () => router.refresh();
   const flagged = o.payment?.needsReview;
+  const [refunding, setRefunding] = useState(false);
+  const refunded = o.refunds.filter((r) => r.status === "approved").reduce((n, r) => n + r.amountCents, 0);
+  const waiting = o.refunds.filter((r) => r.status === "pending");
   const a = o.shipTo;
   return (
     <li className={`card space-y-3 p-4 ${flagged ? "border-red-400" : ""}`}>
@@ -61,6 +68,19 @@ function OrderCard({ o, canResolve }: { o: Row; canResolve: boolean }) {
       {o.fulfillment === "ship" && a && <p className="whitespace-pre-line text-sm">Ship to: {[a.name, a.line1, a.line2, `${a.city ?? ""}, ${a.state ?? ""} ${a.zip ?? ""}`].filter(Boolean).join("\n")}</p>}
       {o.fulfillment === "pickup" && <p className="text-sm">Pickup</p>}
       {o.payment?.tender && <p className="text-xs text-muted">Paid by {o.payment.tender}</p>}
+      {refunded > 0 && <p className="text-sm font-semibold">Refunded so far: {money(refunded)}</p>}
+      {waiting.map((r) => (
+        <div key={r.id} role="alert" className="space-y-2 rounded-md bg-surface-2 p-2 text-sm">
+          <p className="font-semibold">A {money(r.amountCents)} card refund has no answer from Helcim yet. Check Helcim first.</p>
+          {canResolve && (
+            <div className="flex flex-wrap gap-2">
+              <button className="btn btn-soft btn-sm" disabled={pending} onClick={() => act(() => retryRefundAction({ refundId: r.id }), done)}>Retry (safe, cannot refund twice)</button>
+              <button className="btn btn-soft btn-sm" disabled={pending} onClick={() => { const note = prompt("Refunded in Helcim by hand? What did you check?"); if (note?.trim()) act(() => resolvePendingRefundAction({ refundId: r.id, outcome: "approved", note }), done); }}>It was refunded</button>
+              <button className="btn btn-soft btn-sm" disabled={pending} onClick={() => { const note = prompt("Helcim shows no refund? What did you check?"); if (note?.trim()) act(() => resolvePendingRefundAction({ refundId: r.id, outcome: "cleared", note }), done); }}>It was not refunded</button>
+            </div>
+          )}
+        </div>
+      ))}
 
       <div className="flex flex-wrap gap-2">
         {o.status === "paid" && (
@@ -70,6 +90,9 @@ function OrderCard({ o, canResolve }: { o: Row; canResolve: boolean }) {
         )}
         {(o.status === "paid" || o.status === "fulfilled") && o.customerEmail && (
           <button className="btn btn-soft btn-sm" disabled={pending} onClick={() => act(() => emailReceiptAction({ orderId: o.id }))}>Resend receipt</button>
+        )}
+        {canResolve && (o.status === "paid" || o.status === "fulfilled") && waiting.length === 0 && (
+          <button className="btn btn-soft btn-sm" onClick={() => setRefunding(true)}>Refund or return</button>
         )}
         {flagged && canResolve && o.payment && (
           <button
@@ -84,6 +107,50 @@ function OrderCard({ o, canResolve }: { o: Row; canResolve: boolean }) {
           </button>
         )}
       </div>
+      <RefundDialog o={o} open={refunding} onClose={() => setRefunding(false)} onDone={done} />
     </li>
+  );
+}
+
+function RefundDialog({ o, open, onClose, onDone }: { o: Row; open: boolean; onClose: () => void; onDone: () => void }) {
+  const { act, pending } = useAct();
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const [restock, setRestock] = useState(true);
+  const [shipping, setShipping] = useState(false);
+  const [reason, setReason] = useState("");
+  const approved = o.refunds.filter((r) => r.status === "approved");
+  const left = (id: string, sold: number) => sold - approved.reduce((n, r) => n + (r.items.find((i) => i.orderItemId === id)?.quantity ?? 0), 0);
+  const shippingLeft = o.shippingCents - approved.reduce((n, r) => n + r.shippingCents, 0);
+  const items = Object.entries(qty).filter(([, n]) => n > 0).map(([orderItemId, quantity]) => ({ orderItemId, quantity }));
+  const card = o.payment?.tender !== "cash";
+  return (
+    <Dialog open={open} onClose={onClose} title={`Refund order ${o.orderNumber}`}>
+      {open && (
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            act(() => refundOrderAction({ orderId: o.id, items, restock, refundShipping: shipping, reason }), () => { setQty({}); setReason(""); onClose(); onDone(); });
+          }}
+        >
+          <p className="text-sm text-muted">Pick what is coming back. Sales tax on those items is refunded too. {card ? "The money goes back to the customer's card through Helcim." : "This was a cash sale, so give the customer cash from the drawer."}</p>
+          <ul className="space-y-2">
+            {o.items.map((i) => {
+              const max = left(i.id, i.quantity);
+              return (
+                <li key={i.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span>{i.name} <span className="text-muted">({money(i.unitPriceCents)} each, {max} left)</span></span>
+                  <input type="number" min={0} max={max} disabled={max === 0} className="input w-20 py-1" aria-label={`Quantity of ${i.name} to refund`} value={qty[i.id] ?? 0} onChange={(e) => setQty({ ...qty, [i.id]: Math.max(0, Math.min(max, Number(e.target.value) || 0)) })} />
+                </li>
+              );
+            })}
+          </ul>
+          {shippingLeft > 0 && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={shipping} onChange={(e) => setShipping(e.target.checked)} />Also refund shipping ({money(shippingLeft)})</label>}
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />Put the items back in stock</label>
+          <label className="block"><span className="label">Why</span><input className="input" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={300} required placeholder="For example: disc would not read" /></label>
+          <button className="btn btn-primary" disabled={pending || (items.length === 0 && !shipping) || !reason.trim()}>Refund</button>
+        </form>
+      )}
+    </Dialog>
   );
 }

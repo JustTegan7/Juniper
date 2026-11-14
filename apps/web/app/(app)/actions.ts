@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { toResult, type ActionResult } from "../../lib/action-result";
 import { ACTIVE_WORKSPACE_COOKIE, getCtx, requireManager, type Ctx } from "../../lib/services/ctx";
 import * as appts from "../../lib/services/appointments";
@@ -11,6 +11,7 @@ import * as helcim from "../../lib/services/helcim-connection";
 import * as chat from "../../lib/services/messages";
 import * as hours from "../../lib/services/hours";
 import * as orders from "../../lib/services/orders";
+import * as refunds from "../../lib/services/refunds";
 import * as products from "../../lib/services/products";
 import * as settings from "../../lib/services/settings";
 import * as team from "../../lib/services/team";
@@ -55,6 +56,19 @@ export const abandonPaymentAction = async (input: unknown) => run((c) => orders.
 export const emailReceiptAction = async (input: unknown) => run((c) => orders.emailReceipt(c, input));
 export const fulfillOrderAction = async (input: unknown) => run((c) => orders.fulfillOrder(c, input));
 export const resolveReviewAction = async (input: unknown) => run((c) => orders.resolveReview(c, input));
+async function clientIp() {
+  const h = await headers();
+  return (h.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || undefined;
+}
+export const refundOrderAction = async (input: unknown) => {
+  const ipAddress = await clientIp();
+  return run((c) => refunds.refundOrder(c, { ...(input as object), ipAddress }));
+};
+export const retryRefundAction = async (input: unknown) => {
+  const ipAddress = await clientIp();
+  return run((c) => refunds.retryRefund(c, { ...(input as object), ipAddress }));
+};
+export const resolvePendingRefundAction = async (input: unknown) => run((c) => refunds.resolvePendingRefund(c, input));
 export const cancelOrderAction = async (input: unknown) => run((c) => orders.cancelOrder(c, input));
 /** Polled by the register while a card payment is waiting. Does not refresh the page. */
 export async function orderStatusAction(orderId: string) {

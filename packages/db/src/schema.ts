@@ -479,7 +479,8 @@ export const stockMovements = pgTable(
     index("stock_movements_product").on(t.workspaceId, t.productId),
     index("stock_movements_order").on(t.orderId),
     // One row per order, product and reason, so a replayed webhook can never take stock out twice.
-    uniqueIndex("stock_movements_order_product_reason").on(t.orderId, t.productId, t.reason).where(sql`order_id is not null`),
+    // Returns are exempt, since one order can be returned in several parts.
+    uniqueIndex("stock_movements_order_product_reason").on(t.orderId, t.productId, t.reason).where(sql`order_id is not null and reason <> 'return'`),
   ],
 );
 
@@ -593,6 +594,41 @@ export const payments = pgTable(
     // One pending payment per device at a time. Helcim has no queue for a device.
     uniqueIndex("payments_one_pending_per_device").on(t.deviceId).where(sql`status = 'pending' and device_id is not null`),
   ],
+);
+
+export const refundMethod = pgEnum("refund_method", ["cash", "card"]);
+export const refundStatus = pgEnum("refund_status", ["pending", "approved", "failed"]);
+
+/**
+ * Money going back to a customer. Pending means a card refund was sent and the answer is unknown: check Helcim
+ * before retrying. Items are copied here so the order page can show what is left to return.
+ */
+export const refunds = pgTable(
+  "refunds",
+  {
+    id: id(),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    orderId: uuid("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    paymentId: uuid("payment_id").references(() => payments.id, { onDelete: "set null" }),
+    method: refundMethod("method").notNull(),
+    status: refundStatus("status").notNull().default("pending"),
+    amountCents: integer("amount_cents").notNull(),
+    /** The tax and shipping parts of amountCents. The rest is the items. */
+    taxCents: integer("tax_cents").notNull().default(0),
+    shippingCents: integer("shipping_cents").notNull().default(0),
+    /** [{ orderItemId, productId, quantity }] */
+    items: jsonb("items").notNull().default([]),
+    restock: boolean("restock").notNull().default(true),
+    reason: text("reason").notNull(),
+    /** Sent as the Helcim idempotency-key header, so a retry can never refund twice. */
+    idempotencyKey: text("idempotency_key").notNull(),
+    helcimTransactionId: text("helcim_transaction_id"),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    raw: jsonb("raw"),
+    ...stamps,
+  },
+  (t) => [uniqueIndex("refunds_idem").on(t.idempotencyKey), index("refunds_order").on(t.orderId)],
 );
 
 /** Every webhook delivery, deduped on Helcim's webhook-id. */
