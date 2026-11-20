@@ -9,6 +9,8 @@ export const siteConfig = {
 
   phone: "",
   email: "tegan@evergreendigitalco.com",
+  // Public support mailbox for the app stores and the privacy page. Must be a real inbox someone reads.
+  supportEmail: "support@evergreendigitalco.com",
   address: { street: "", city: "", state: "WA", postalCode: "" },
   serviceArea: [] as string[],
 

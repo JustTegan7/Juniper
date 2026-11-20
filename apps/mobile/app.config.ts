@@ -5,13 +5,14 @@ const config: ExpoConfig = {
   name: "Juniper",
   slug: "juniper",
   scheme: "juniper",
-  version: "0.1.0",
+  version: "1.0.0",
   orientation: "portrait",
   userInterfaceStyle: "automatic",
   icon: "./assets/icon.png",
   ios: {
     bundleIdentifier: "com.evergreendigital.juniper",
     supportsTablet: false,
+    infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
   android: {
     package: "com.evergreendigital.juniper",
