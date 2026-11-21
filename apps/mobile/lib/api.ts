@@ -113,6 +113,7 @@ export function createApi(deps: ApiDeps) {
     removeDevice: (token: string) => request<MessageResponse>("POST", "/devices/remove", { body: { token } }),
     notificationSettings: () => request<NotificationSettings>("GET", "/notifications"),
     setNotificationSettings: (change: Partial<NotificationSettings>) => request<NotificationSettings>("POST", "/notifications", { body: { ...change } }),
+    deleteAccount: (confirm: string) => request<MessageResponse>("POST", "/account/delete", { body: { confirm } }),
     cancelTimeOff: (id: string) => request<MessageResponse>("POST", `/time-off/${encodeURIComponent(id)}/cancel`),
   };
 }
